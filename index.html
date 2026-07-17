@@ -65,8 +65,13 @@
   input, select {
     width: 100%; background: #0b1120; color: var(--text); border: 1px solid #334155;
     border-radius: 10px; padding: 12px 12px; font-size: 16px;
+    box-sizing: border-box; height: 48px; line-height: 1.2;
+    -webkit-appearance: none; appearance: none; font-family: inherit;
   }
-  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  input[type=date] { min-width: 0; } /* iOS gives date inputs an intrinsic width that overflows the grid */
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: end; }
+  .row2 > div { min-width: 0; } /* let grid cells shrink so both inputs match width */
+  .row2 label { margin-top: 0; }
   .btns { display: flex; gap: 10px; margin-top: 18px; }
   button.primary, button.ghost, button.danger {
     flex: 1; border: 0; border-radius: 12px; padding: 14px; font-size: 16px; font-weight: 600; cursor: pointer;
@@ -405,6 +410,11 @@
   }
 
   var MERCHANT_SKIP = /^[\d\s\W]*$|^\s*(receipt|invoice|welcome|thank|order|tel|phone|fax|www\.|http|store\s*#|reg(ister)?\s*#|cashier|date|time|customer copy|duplicate|merchant|terminal|survey|www|http)/i;
+  // Generic header words that are never the store name, wherever they appear on the line
+  // (e.g. "SALE RECEIPT", "Sales Receipt", "TAX INVOICE", "GUEST CHECK", "Customer Copy").
+  // Matches "receipt"/"invoice" anywhere, plus specific multi-word headers — but NOT bare
+  // "check"/"copy" alone, which could be a real store name (e.g. "Copy Center").
+  var NON_MERCHANT = /\b(receipt|invoice)\b|\b(guest\s+check|tax\s+invoice|(customer|merchant)\s+copy|itemized|subtotal)\b/i;
   var ADDRESSY = /\b(street|st\.|ave|avenue|blvd|suite|ste\.?|drive|dr\.|road|rd\.|hwy|highway|\d{5}(-\d{4})?)\b/i;
   var TIMEY = /\b\d{1,2}[:h]\d{2}\b/;
 
@@ -434,6 +444,7 @@
       var line = lines[i].trim();
       if (line.length < 3 || line.length > 42) continue;
       if (MERCHANT_SKIP.test(line)) continue;
+      if (NON_MERCHANT.test(line)) continue;        // "Sale Receipt", "Tax Invoice", etc.
       if (MONEY.test(line)) continue;               // has a price → not the name
       if (TIMEY.test(line)) continue;               // a time stamp
       if (extractDate(line)) continue;              // a date line
@@ -449,7 +460,9 @@
 
   function titleCase(s) {
     if (s === s.toUpperCase()) {
-      return s.toLowerCase().replace(/\b[a-z]/g, function (c) { return c.toUpperCase(); });
+      // Capitalize the first letter of each whitespace-separated word only, so
+      // "JOE'S" → "Joe's" (not "Joe'S") and "H&R" → "H&r"→ keep as-is-ish.
+      return s.toLowerCase().replace(/(^|\s)([a-z])/g, function (_, pre, c) { return pre + c.toUpperCase(); });
     }
     return s;
   }
