@@ -13,139 +13,227 @@
 <link rel="icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMAAAADACAIAAADdvvtQAAAFGklEQVR4nO3dsY4bVRjF8TvWiDpF1rsvgCCKSOU8A21ClUW8APA8ENEjaMAOJc9AKqNAWF4gG5rUNJPCQiG7S5jxWc+55+7/p2kirZXPc6++ezxzPe5Wv35TgH31w+AuAckW7gKQrS+lc9eAYHQgSPoy0IGwv54MDQVLGCSEaEj6whoGAR0IEkI0JHQgSMhAkPAxHhKWMEgI0ZBwLwwSMhAkTCBICNGQsCcaEjoQJGQgSOhAkNCBICFEQ8ISBglLGCR0IEjYUAZJXds5tqtP3SUEuPf0O3cJb3Qf/VJLNdvVqbuEJPeefu8uoZRKQvR2dcrsmaqSM7YoQ+c/sJft6tQ+dv4OtL3/yF1CMPvZWwylMx7299+A7f1HxhH0dyBE4zpQE3yDyJXoNtgGkSUMkn6gA+UzDiIZqAm+QWQJg4QQ3QZCNDL1A7ei8hkHkQ4ECRmoDXQgZOrdBezj1slddwlzePXimbuE/5cXom/I7Cml3Dq5O3IOEaLHujmzZ6f+90uIbgMdCJm4mdoE44ayrO0cr148qz8WXKOxIZolbLyID7fXIuKdRoboiDM7LzaUQcGmemh8HYgG1ADjIOaFaFSFX+tpAvfCEIoQ3QZCNATGQeQ6UBO4DgSN8Up0oK++/dldwmRffvaxu4SDWJTSWY/JEmdPOXjZthFcDEMxHlOFzp6dwxVvHEEyUBu4kIhMTCBIwkJ09GeZQxZPiB4tdA4dtGxC9DShc+iQCNHIxASChA1lTfANIts5WmDdzhEYonEJIRqZyEBNYFM9QhGiW0CIhsj3MT5xU33928rmvtli/bWepLvxJWH2FEORvrvx875PVcTs2QkqVUGIboH3i4WE6HxcB0KosBAdtJVs3lIJ0aNFzKGIIq9F5IXEmzM8o9kGsd9vZzuqYhzEvCUMVYlcwnAJH+ORiQuJTWBTPRQ8aBypCNFt8C1hiRvKcBFPaYWGEA0Bm+qnqW2zXwX35owXEofiPKarbfaUGkryjWDYx3j/UP2Hags7tMglDJcQoiGwXokeOucxUQVx9WrmwnwjGJaBin2orlJhSbOJ/LWemzxgtSFEt4E90RAYB5EO1Aa2tCITHagNdCBkIkS3gBANEUsYMtGB2sCmeiiMGShx/rz3+At3CRP8/fnXh/4vvF8sTHpCWUmbPWWmgnlC2Thxs2cntOwxeLhCE3hKK0IthtIZj6nlzhBID+HQZRtHMK8Dxc2huIInibwO1PaQ7IN7YdAQopGp3yPJojbGQYzMQLiIB40jFCG6DYRoZOoH7oXlMw4iHQgSMlAbbmoHOvnpN28BDfCeQ5YwSLrlxt8Dzh/ccZeQ6vjJ794CzB3o/MEdZo/CfvYI0Q1wjqC5Ax0/ee4tIJ39BHbLtXkRLaWcP/xw/B8fb57X/CpLeUbd0dpfRCnl5cMPxvzZcvNHza8yludSy8f4Mafj8t9U9SpveS72b6a+OZabs3cUutyc2V9VfXmGw/1rPW8fy/XVJ265PqvhVZWXZzm6ox/fNdktXn7y/r//uVz/WdWrKi9vZt3t+iZQKeWvf07c0ZRTNturKi9vTrWE6At2J2vqKZvtVZWXN6fu9g+VVoYIlXYgpOBeGCSRj7hDPfhiISQsYZAQoiGhA0HCj61AQgeChAwECRMIEpYwSAjRkNCBICEDQcIEgoRf64GE7RyQEKIhIQNBQgaChA4ECSEaEkI0JGyqh4QOBAkhGhJCNCRcB4KEJQwSQjQkdCBIXgOfbPzTW1TmPgAAAABJRU5ErkJggg==">
 <style>
   :root {
-    --bg: #0f172a; --card: #1e293b; --card2: #273449; --text: #f1f5f9; --muted: #94a3b8;
-    --accent: #34d399; --accent-dark: #059669; --danger: #f87171; --warn: #fbbf24;
-    --radius: 16px;
+    /* ===== BRAND ACCENT — swap this one value for your hex ===== */
+    --accent: #4f7cff;
+    --accent-soft: color-mix(in srgb, var(--accent) 16%, transparent);
+    --accent-line: color-mix(in srgb, var(--accent) 40%, transparent);
+
+    --bg: #0a0e14; --bg-2: #0d1420;
+    --card: #121a26; --card-2: #182333; --line: rgba(255,255,255,.07);
+    --text: #e8edf5; --muted: #8a97ab; --muted-2: #5b6678;
+    --danger: #ff6b6b; --warn: #f0b429; --good: #35c88a;
+    --radius: 14px; --radius-lg: 20px;
   }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   body {
-    margin: 0; background: var(--bg); color: var(--text);
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    padding-bottom: calc(84px + env(safe-area-inset-bottom));
+    margin: 0; color: var(--text);
+    background:
+      radial-gradient(120% 60% at 50% -10%, color-mix(in srgb, var(--accent) 14%, transparent), transparent 60%),
+      var(--bg);
+    background-attachment: fixed;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    padding-bottom: calc(86px + env(safe-area-inset-bottom));
+    letter-spacing: -0.01em;
   }
   header {
-    padding: calc(14px + env(safe-area-inset-top)) 20px 14px; display: flex; align-items: center; gap: 10px;
-    position: sticky; top: 0; background: rgba(15,23,42,.92); backdrop-filter: blur(8px); z-index: 5;
+    padding: calc(16px + env(safe-area-inset-top)) 18px 14px; display: flex; align-items: center; gap: 11px;
+    position: sticky; top: 0; background: color-mix(in srgb, var(--bg) 82%, transparent);
+    backdrop-filter: saturate(140%) blur(14px); z-index: 5; border-bottom: 1px solid var(--line);
   }
-  header .logo { width: 34px; height: 34px; border-radius: 9px; background: linear-gradient(135deg,#34d399,#0ea5e9); display:flex; align-items:center; justify-content:center; font-size:19px; }
-  header h1 { font-size: 19px; margin: 0; font-weight: 700; letter-spacing: -.02em; }
-  header .tag { margin-left:auto; font-size:11px; color:var(--muted); text-align:right; line-height:1.3; }
-  main { padding: 4px 16px 16px; max-width: 560px; margin: 0 auto; }
-  .view { display: none; } .view.active { display: block; }
+  header .logo {
+    width: 34px; height: 34px; border-radius: 10px; display:flex; align-items:center; justify-content:center;
+    background: linear-gradient(160deg, var(--card-2), var(--card));
+    border: 1px solid var(--accent-line); color: var(--accent);
+    box-shadow: 0 0 0 1px rgba(0,0,0,.3), 0 6px 16px -8px var(--accent);
+  }
+  header .logo svg { width: 19px; height: 19px; }
+  header h1 { font-size: 18px; margin: 0; font-weight: 650; letter-spacing: -.02em; }
+  header h1 span { color: var(--accent); }
+  header .tag {
+    margin-left:auto; font-size: 10px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 5px 10px;
+    display: flex; align-items: center; gap: 5px;
+  }
+  header .tag .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--good); box-shadow: 0 0 8px var(--good); }
+  main { padding: 6px 16px 16px; max-width: 560px; margin: 0 auto; }
+  .view { display: none; } .view.active { display: block; animation: fade .25s ease; }
+  @keyframes fade { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+  .section-label { font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--muted-2); margin: 20px 2px 8px; }
 
-  /* Capture */
-  .big-capture {
-    width: 100%; border: 0; border-radius: var(--radius); cursor: pointer;
-    background: linear-gradient(135deg, #059669, #0ea5e9); color: #fff;
-    padding: 34px 20px; font-size: 20px; font-weight: 700; margin-top: 12px;
-    display: flex; flex-direction: column; align-items: center; gap: 8px;
-    box-shadow: 0 10px 30px rgba(5,150,105,.35);
+  /* Capture hero — a viewfinder card (clearly tappable) + a real button below */
+  .hero {
+    margin-top: 14px; border-radius: var(--radius-lg); cursor: pointer; position: relative; overflow: hidden;
+    background: linear-gradient(165deg, var(--card-2), var(--card));
+    border: 1px solid var(--line); padding: 30px 20px 28px;
+    display: flex; flex-direction: column; align-items: center; text-align: center;
+    transition: transform .12s ease, border-color .2s;
   }
-  .big-capture span.icon { font-size: 44px; }
-  .big-capture small { font-weight: 400; font-size: 13px; opacity: .85; }
-  .hint { color: var(--muted); font-size: 13px; text-align: center; margin: 14px 0 0; line-height: 1.5; }
-  .privacy { margin-top: 18px; background: var(--card); border-radius: var(--radius); padding: 14px 16px; font-size: 13px; color: var(--muted); line-height: 1.55; }
-  .privacy b { color: var(--accent); }
+  .hero:active { transform: scale(.985); border-color: var(--accent-line); }
+  .viewfinder {
+    width: 84px; height: 84px; border-radius: 18px; display: flex; align-items: center; justify-content: center;
+    color: var(--accent); position: relative; margin-bottom: 16px;
+    background: radial-gradient(circle at 50% 40%, var(--accent-soft), transparent 70%);
+  }
+  .viewfinder svg { width: 40px; height: 40px; }
+  .viewfinder::before, .viewfinder::after,
+  .viewfinder i::before, .viewfinder i::after {
+    content: ""; position: absolute; width: 16px; height: 16px; border: 2px solid var(--accent-line); border-radius: 3px;
+  }
+  .viewfinder::before { top: 0; left: 0; border-right: 0; border-bottom: 0; }
+  .viewfinder::after  { top: 0; right: 0; border-left: 0; border-bottom: 0; }
+  .viewfinder i::before { bottom: 0; left: 0; border-right: 0; border-top: 0; }
+  .viewfinder i::after  { bottom: 0; right: 0; border-left: 0; border-top: 0; }
+  .hero-title { font-size: 19px; font-weight: 650; letter-spacing: -.02em; }
+  .hero-sub { font-size: 13px; color: var(--muted); margin-top: 5px; max-width: 260px; line-height: 1.45; }
+  .capture-actions { margin-top: 14px; display: flex; flex-direction: column; gap: 10px; }
+  .btn-link { background: none; border: 0; color: var(--muted); font-size: 13px; padding: 8px; cursor: pointer; text-align: center; }
+  .btn-link:active { color: var(--text); }
+  .hint { color: var(--muted-2); font-size: 12.5px; text-align: center; margin: 14px 0 0; line-height: 1.5; }
+  .privacy {
+    margin-top: 22px; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 14px 16px; font-size: 12.5px; color: var(--muted); line-height: 1.55;
+    display: flex; gap: 11px; align-items: flex-start;
+  }
+  .privacy svg { width: 18px; height: 18px; color: var(--accent); flex: none; margin-top: 1px; }
+  .privacy b { color: var(--text); font-weight: 600; }
+
+  /* Buttons */
+  button.primary, button.ghost, button.danger {
+    flex: 1; border: 0; border-radius: 12px; padding: 14px; font-size: 15px; font-weight: 600; cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px; letter-spacing: -.01em;
+    transition: transform .1s ease, filter .15s;
+  }
+  button.primary:active, button.ghost:active, button.danger:active { transform: translateY(1px) scale(.99); }
+  button.primary {
+    color: #fff; background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 92%, white 8%), var(--accent));
+    box-shadow: 0 8px 22px -10px var(--accent), inset 0 1px 0 rgba(255,255,255,.18);
+  }
+  button.primary:active { filter: brightness(.95); }
+  button.primary.lg { padding: 16px; font-size: 16px; width: 100%; }
+  button.primary svg, button.ghost svg { width: 18px; height: 18px; }
+  button.ghost { background: var(--card-2); color: var(--text); border: 1px solid var(--line); }
+  button.danger { background: transparent; color: var(--danger); border: 1px solid color-mix(in srgb, var(--danger) 45%, transparent); }
 
   /* Progress */
-  .progress-wrap { margin-top: 18px; background: var(--card); border-radius: var(--radius); padding: 18px; display: none; }
+  .progress-wrap { margin-top: 16px; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; display: none; }
   .progress-wrap.show { display: block; }
-  .progress-label { font-size: 14px; margin-bottom: 10px; color: var(--text); }
-  .bar { height: 8px; background: #0b1120; border-radius: 6px; overflow: hidden; }
-  .bar > div { height: 100%; width: 0%; background: linear-gradient(90deg,#34d399,#0ea5e9); transition: width .2s; }
-  .preview-img { width: 100%; border-radius: 12px; margin-bottom: 12px; max-height: 300px; object-fit: contain; background:#0b1120; }
+  .progress-label { font-size: 13px; margin-bottom: 10px; color: var(--muted); }
+  .bar { height: 7px; background: rgba(0,0,0,.35); border-radius: 6px; overflow: hidden; }
+  .bar > div { height: 100%; width: 0%; background: linear-gradient(90deg, var(--accent), color-mix(in srgb, var(--accent) 60%, white)); transition: width .2s; }
+  .preview-img { width: 100%; border-radius: 12px; margin-bottom: 12px; max-height: 300px; object-fit: contain; background: rgba(0,0,0,.3); }
 
   /* Review form */
-  .review { margin-top: 16px; background: var(--card); border-radius: var(--radius); padding: 18px; display: none; }
+  .review { margin-top: 16px; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; display: none; }
   .review.show { display: block; }
-  .review h3 { margin: 0 0 4px; font-size: 17px; }
-  .conf { font-size: 12px; margin-bottom: 14px; }
-  .conf.high { color: var(--accent); } .conf.medium { color: var(--warn); } .conf.low { color: var(--danger); }
-  label { display: block; font-size: 12px; color: var(--muted); margin: 12px 0 5px; text-transform: uppercase; letter-spacing: .05em; }
+  .review h3 { margin: 0 0 6px; font-size: 16px; font-weight: 650; }
+  .conf { font-size: 12.5px; margin-bottom: 16px; display: inline-flex; align-items: center; gap: 7px; padding: 5px 11px; border-radius: 999px; border: 1px solid var(--line); }
+  .conf.high { color: var(--good); } .conf.medium { color: var(--warn); } .conf.low { color: var(--danger); }
+  .conf::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  label { display: block; font-size: 11px; color: var(--muted); margin: 14px 0 6px; text-transform: uppercase; letter-spacing: .06em; font-weight: 600; }
   input, select {
-    width: 100%; background: #0b1120; color: var(--text); border: 1px solid #334155;
-    border-radius: 10px; padding: 12px 12px; font-size: 16px;
-    box-sizing: border-box; height: 48px; line-height: 1.2;
-    -webkit-appearance: none; appearance: none; font-family: inherit;
+    width: 100%; background: var(--bg-2); color: var(--text); border: 1px solid var(--line);
+    border-radius: 11px; padding: 12px 13px; font-size: 16px;
+    box-sizing: border-box; height: 50px; line-height: 1.2;
+    -webkit-appearance: none; appearance: none; font-family: inherit; transition: border-color .15s, box-shadow .15s;
   }
-  input[type=date] { min-width: 0; } /* iOS gives date inputs an intrinsic width that overflows the grid */
+  input:focus, select:focus { outline: 0; border-color: var(--accent-line); box-shadow: 0 0 0 3px var(--accent-soft); }
+  select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238a97ab' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 13px center; background-size: 18px; padding-right: 40px;
+  }
+  input[type=date] { min-width: 0; }
   .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: end; }
-  .row2 > div { min-width: 0; } /* let grid cells shrink so both inputs match width */
+  .row2 > div { min-width: 0; }
   .row2 label { margin-top: 0; }
-  .btns { display: flex; gap: 10px; margin-top: 18px; }
-  button.primary, button.ghost, button.danger {
-    flex: 1; border: 0; border-radius: 12px; padding: 14px; font-size: 16px; font-weight: 600; cursor: pointer;
-  }
-  button.primary { background: var(--accent-dark); color: #fff; }
-  button.ghost { background: var(--card2); color: var(--text); }
-  button.danger { background: transparent; color: var(--danger); border: 1px solid var(--danger); }
-  details.ocr { margin-top: 14px; }
-  details.ocr summary { color: var(--muted); font-size: 13px; cursor: pointer; }
-  details.ocr pre { white-space: pre-wrap; font-size: 11px; color: var(--muted); background: #0b1120; padding: 10px; border-radius: 10px; max-height: 180px; overflow: auto; }
+  .btns { display: flex; gap: 10px; margin-top: 20px; }
+  details.ocr { margin-top: 16px; }
+  details.ocr summary { color: var(--muted); font-size: 12.5px; cursor: pointer; }
+  details.ocr pre { white-space: pre-wrap; font-size: 11px; color: var(--muted); background: var(--bg-2); border: 1px solid var(--line); padding: 10px; border-radius: 10px; max-height: 180px; overflow: auto; margin-top: 8px; }
 
   /* Receipts list */
   .receipt-card {
-    background: var(--card); border-radius: var(--radius); padding: 12px 14px; margin-top: 12px;
-    display: flex; gap: 12px; align-items: center; cursor: pointer;
+    background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px; margin-top: 10px;
+    display: flex; gap: 12px; align-items: center; cursor: pointer; transition: transform .1s, border-color .2s;
   }
-  .receipt-card img { width: 52px; height: 52px; object-fit: cover; border-radius: 10px; background: #0b1120; }
+  .receipt-card:active { transform: scale(.99); border-color: var(--accent-line); }
+  .receipt-card img { width: 50px; height: 50px; object-fit: cover; border-radius: 10px; background: rgba(0,0,0,.3); }
   .receipt-card .info { flex: 1; min-width: 0; }
   .receipt-card .m { font-weight: 600; font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .receipt-card .c { font-size: 12px; color: var(--accent); margin-top: 2px; }
-  .receipt-card .d { font-size: 12px; color: var(--muted); margin-top: 2px; }
-  .receipt-card .amt { font-weight: 700; font-size: 17px; white-space: nowrap; }
-  .empty { text-align: center; color: var(--muted); padding: 48px 20px; font-size: 14px; line-height: 1.6; }
+  .receipt-card .c { font-size: 12px; color: var(--accent); margin-top: 3px; font-weight: 500; }
+  .receipt-card .d { font-size: 12px; color: var(--muted); margin-top: 3px; }
+  .receipt-card .amt { font-weight: 700; font-size: 17px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .empty { text-align: center; color: var(--muted); padding: 56px 20px; font-size: 14px; line-height: 1.6; }
 
   /* Summary */
-  .stat-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
-  .stat { background: var(--card); border-radius: var(--radius); padding: 16px; }
-  .stat .v { font-size: 24px; font-weight: 800; letter-spacing: -.02em; }
-  .stat .l { font-size: 12px; color: var(--muted); margin-top: 4px; }
-  .catline { background: var(--card); border-radius: 12px; padding: 12px 14px; margin-top: 8px; }
-  .catline .top { display: flex; justify-content: space-between; font-size: 14px; }
+  .stat-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 14px; }
+  .stat { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; }
+  .stat .v { font-size: 25px; font-weight: 750; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+  .stat .l { font-size: 11.5px; color: var(--muted); margin-top: 5px; text-transform: uppercase; letter-spacing: .05em; }
+  .catline { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 13px 14px; margin-top: 9px; }
+  .catline .top { display: flex; justify-content: space-between; font-size: 14px; gap: 10px; }
   .catline .top b { font-weight: 600; }
-  .catline .sc { font-size: 11px; color: var(--muted); margin-top: 3px; }
-  .catline .meter { height: 5px; background: #0b1120; border-radius: 4px; margin-top: 8px; overflow: hidden; }
-  .catline .meter > div { height: 100%; background: linear-gradient(90deg,#34d399,#0ea5e9); }
+  .catline .top span { font-variant-numeric: tabular-nums; }
+  .catline .sc { font-size: 11px; color: var(--muted); margin-top: 4px; }
+  .catline .meter { height: 5px; background: rgba(0,0,0,.35); border-radius: 4px; margin-top: 9px; overflow: hidden; }
+  .catline .meter > div { height: 100%; background: linear-gradient(90deg, var(--accent), color-mix(in srgb, var(--accent) 55%, white)); border-radius: 4px; }
   .yearsel { margin-top: 14px; }
 
   /* Tab bar */
   nav {
     position: fixed; bottom: 0; left: 0; right: 0; display: flex; z-index: 10;
-    background: rgba(15,23,42,.95); backdrop-filter: blur(10px); border-top: 1px solid #1e293b;
-    padding-bottom: env(safe-area-inset-bottom);
+    background: color-mix(in srgb, var(--bg) 84%, transparent); backdrop-filter: saturate(140%) blur(16px);
+    border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom);
   }
   nav button {
-    flex: 1; background: none; border: 0; color: var(--muted); padding: 10px 0 8px;
-    font-size: 11px; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 3px;
+    flex: 1; background: none; border: 0; color: var(--muted-2); padding: 11px 0 9px; position: relative;
+    font-size: 10.5px; font-weight: 500; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 4px;
+    transition: color .15s;
   }
-  nav button .i { font-size: 22px; }
+  nav button .i { display: flex; } nav button .i svg { width: 22px; height: 22px; }
   nav button.active { color: var(--accent); }
+  nav button.active::before {
+    content: ""; position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+    width: 26px; height: 2.5px; border-radius: 2px; background: var(--accent); box-shadow: 0 0 10px var(--accent);
+  }
   .toast {
-    position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(96px + env(safe-area-inset-bottom));
-    background: #065f46; color: #fff; padding: 10px 18px; border-radius: 999px; font-size: 14px;
-    opacity: 0; pointer-events: none; transition: opacity .25s; z-index: 20; white-space: nowrap;
+    position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(98px + env(safe-area-inset-bottom));
+    background: var(--card-2); color: var(--text); border: 1px solid var(--accent-line);
+    padding: 11px 18px; border-radius: 999px; font-size: 14px; font-weight: 500;
+    opacity: 0; pointer-events: none; transition: opacity .25s, transform .25s; z-index: 20; white-space: nowrap;
+    box-shadow: 0 12px 30px -10px rgba(0,0,0,.6);
   }
   .toast.show { opacity: 1; }
 </style>
 </head>
 <body>
 <header>
-  <div class="logo">🧾</div>
-  <h1>ReceiptSnap</h1>
-  <div class="tag">Free · Private<br>On-device OCR</div>
+  <div class="logo">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3v18l2-1.2L9 21l2-1.2L13 21l2-1.2L17 21l2-1.2V3l-2 1.2L15 3l-2 1.2L11 3 9 4.2 7 3 5 4.2Z"/><path d="M9 8h6M9 12h6"/></svg>
+  </div>
+  <h1>Receipt<span>Snap</span></h1>
+  <div class="tag"><span class="dot"></span>On-device</div>
 </header>
 
 <main>
   <!-- CAPTURE -->
   <section id="view-capture" class="view active">
-    <button class="big-capture" id="btn-capture">
-      <span class="icon">📸</span>
-      Snap a Receipt
-      <small>Photo → text → tax category, all on your phone</small>
-    </button>
+    <div class="hero" id="btn-capture" role="button" tabindex="0">
+      <div class="viewfinder"><i></i>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+      </div>
+      <div class="hero-title">Scan a receipt</div>
+      <div class="hero-sub">Read &amp; categorized entirely on your phone — nothing uploaded.</div>
+    </div>
+    <div class="capture-actions">
+      <button class="primary lg" id="btn-scan">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        Scan Receipt
+      </button>
+      <button class="btn-link" id="btn-lib">Choose from photo library</button>
+    </div>
     <input type="file" id="file-input" accept="image/*" capture="environment" hidden>
-    <p class="hint">Tip: lay the receipt flat, fill the frame, good light.<br>You can also pick an existing photo from your library.</p>
+    <input type="file" id="file-input-lib" accept="image/*" hidden>
 
     <div class="progress-wrap" id="progress">
       <img id="preview" class="preview-img" alt="Receipt preview">
@@ -173,9 +261,9 @@
     </div>
 
     <div class="privacy">
-      <b>Your data never leaves this device.</b> Photos are read by OCR locally in your browser and
-      stored on-device only — nothing is uploaded, no account, no fees. Use Export (Summary tab)
-      to back up a CSV for your accountant.
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      <span><b>Your data never leaves this device.</b> OCR runs locally in your browser and receipts are
+      stored on-device only — no upload, no account, no fees. Use Export on the Summary tab to back up a CSV for your accountant.</span>
     </div>
   </section>
 
@@ -193,16 +281,25 @@
     </div>
     <div id="cat-breakdown"></div>
     <div class="btns">
-      <button class="primary" id="btn-export">⬇︎ Export CSV for taxes</button>
+      <button class="primary" id="btn-export">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
+        Export CSV for taxes
+      </button>
     </div>
-    <p class="hint">CSV columns match what your accountant needs for Schedule C: date, merchant, amount, category, Schedule C line.</p>
+    <p class="hint">CSV columns match what your accountant needs for Schedule C: date, merchant, amount, category, Schedule&nbsp;C line.</p>
   </section>
 </main>
 
 <nav>
-  <button data-view="capture" class="active"><span class="i">📸</span>Capture</button>
-  <button data-view="receipts"><span class="i">🗂</span>Receipts</button>
-  <button data-view="summary"><span class="i">📊</span>Summary</button>
+  <button data-view="capture" class="active">
+    <span class="i"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></span>Capture
+  </button>
+  <button data-view="receipts">
+    <span class="i"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg></span>Receipts
+  </button>
+  <button data-view="summary">
+    <span class="i"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg></span>Summary
+  </button>
 </nav>
 
 <div class="toast" id="toast"></div>
@@ -330,7 +427,7 @@
 
   var MONEY = /\$?\s*([0-9]{1,3}(?:[.,][0-9]{3})*[.,][0-9]{2})(?!\d)/;
   var TOTAL_HINTS = [
-    /(?:grand\s*total|total\s*due|amount\s*due|balance\s*due|total\s*payment|payment\s*due)/i,
+    /(?:grand\s*total|total\s*due|amount\s*due|balance\s*due|total\s*payment|payment\s*due|total\s*sale|purchase\s*total|to\s*pay|amount\s*charged)/i,
     /(?:^|\s)total(?!\s*(?:items?|qty|savings|discount|tax))/i,
     /amount(?:\s*charged|\s*paid)?/i,
     /balance/i
@@ -490,10 +587,35 @@
     return best;
   }
 
+  // Known store names — used to backfill the merchant when the top of the receipt
+  // is a logo/graphic that OCR turned to garbage. Longer/more-specific names first.
+  var BRANDS = [
+    'Home Depot', "Lowe's", 'Ace Hardware', 'Harbor Freight', 'Tractor Supply',
+    'Office Depot', 'OfficeMax', 'Best Buy', 'Circle K', 'Dollar General', 'Dollar Tree',
+    'Sam\'s Club', 'Whole Foods', 'Trader Joe', 'Jiffy Lube', 'Pep Boys', 'Napa Auto',
+    'H&R Block', 'Best Western', 'Holiday Inn', 'State Farm', 'Liberty Mutual',
+    'Uber Eats', 'Chick-fil-A', 'Panera', 'Starbucks', 'McDonald', 'Chipotle', 'Subway',
+    'Dunkin', 'Wendy', 'Chevron', 'Shell', 'Exxon', 'Mobil', 'Texaco', 'Sunoco', 'Arco',
+    'Marathon', 'Speedway', 'Costco', 'Walmart', 'Target', 'Kroger', 'Safeway', 'Publix',
+    'Walgreens', 'CVS', 'Menards', 'Staples', 'FedEx', 'USPS', 'Marriott', 'Hilton',
+    'Hyatt', 'Amazon', 'Adobe', 'QuickBooks', 'GoDaddy', 'Verizon', 'AT&T', 'T-Mobile',
+    'Comcast', 'Xfinity', 'Spectrum', 'AutoZone', 'Valvoline', 'Firestone', 'Goodyear',
+    'Geico', 'Progressive', 'Allstate', 'Lyft', 'Uber', 'Wawa', 'Sheetz', 'Kwik Trip'
+  ];
+
+  function brandFromText(text) {
+    var lower = text.toLowerCase();
+    for (var i = 0; i < BRANDS.length; i++) {
+      if (lower.indexOf(BRANDS[i].toLowerCase()) !== -1) return BRANDS[i];
+    }
+    return null;
+  }
+
   function parseReceipt(rawText) {
     var text = (rawText || '').replace(/\r/g, '');
     var lines = text.split('\n').map(function (l) { return l.trim(); }).filter(Boolean);
     var merchant = extractMerchant(lines);
+    if (!merchant) merchant = brandFromText(text);   // fallback: recognized brand anywhere
     var total = extractTotal(lines);
     var date = extractDate(text);
     var category = classify(text, merchant);
@@ -578,13 +700,17 @@
   // ---------- capture & OCR ----------
   var pending = null; // {imageBlob, thumb, ocrText, parsed, editingId}
   $('btn-capture').addEventListener('click', function () { $('file-input').click(); });
+  $('btn-scan').addEventListener('click', function () { $('file-input').click(); });
+  $('btn-lib').addEventListener('click', function () { $('file-input-lib').click(); });
 
-  $('file-input').addEventListener('change', function (e) {
+  function onPick(e) {
     var file = e.target.files && e.target.files[0];
     e.target.value = '';
     if (!file) return;
     processImage(file);
-  });
+  }
+  $('file-input').addEventListener('change', onPick);
+  $('file-input-lib').addEventListener('change', onPick);
 
   function downscale(file, maxDim, opts) {
     opts = opts || {};
@@ -604,12 +730,44 @@
         ctx.imageSmoothingEnabled = true;
         ctx.imageSmoothingQuality = 'high';
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        if (opts.grayscale) {
-          var d = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        if (opts.grayscale || opts.binarize) {
+          var w = canvas.width, h = canvas.height;
+          var d = ctx.getImageData(0, 0, w, h);
           var px = d.data;
-          for (var i = 0; i < px.length; i += 4) {
+          var gray = new Float32Array(w * h);
+          for (var i = 0, k = 0; i < px.length; i += 4, k++) {
             var g = 0.299 * px[i] + 0.587 * px[i + 1] + 0.114 * px[i + 2];
+            gray[k] = g;
             px[i] = px[i + 1] = px[i + 2] = g;
+          }
+          if (opts.binarize) {
+            // Bradley–Roth adaptive threshold via an integral image: each pixel is
+            // compared to the mean brightness of its local neighborhood, so shadows,
+            // creases and uneven phone lighting don't wash out the text. O(w·h).
+            var integ = new Float64Array(w * h);
+            for (var y = 0; y < h; y++) {
+              var rowSum = 0;
+              for (var x = 0; x < w; x++) {
+                rowSum += gray[y * w + x];
+                integ[y * w + x] = (y > 0 ? integ[(y - 1) * w + x] : 0) + rowSum;
+              }
+            }
+            var S = Math.max(8, w >> 4), s2 = S >> 1, T = 0.15; // window ≈ width/16, 15% below local mean
+            for (var y2 = 0; y2 < h; y2++) {
+              for (var x2 = 0; x2 < w; x2++) {
+                var x1 = x2 - s2 < 0 ? 0 : x2 - s2, xb = x2 + s2 >= w ? w - 1 : x2 + s2;
+                var y1 = y2 - s2 < 0 ? 0 : y2 - s2, yb = y2 + s2 >= h ? h - 1 : y2 + s2;
+                var count = (xb - x1 + 1) * (yb - y1 + 1);
+                var A = (x1 > 0 && y1 > 0) ? integ[(y1 - 1) * w + (x1 - 1)] : 0;
+                var Bv = (y1 > 0) ? integ[(y1 - 1) * w + xb] : 0;
+                var Cv = (x1 > 0) ? integ[yb * w + (x1 - 1)] : 0;
+                var Dv = integ[yb * w + xb];
+                var sumWin = Dv - Bv - Cv + A;
+                var idx = y2 * w + x2, o = idx * 4;
+                var val = (gray[idx] * count <= sumWin * (1 - T)) ? 0 : 255;
+                px[o] = px[o + 1] = px[o + 2] = val;
+              }
+            }
           }
           ctx.putImageData(d, 0, 0);
         }
@@ -629,25 +787,39 @@
     return t.toDataURL('image/jpeg', 0.7);
   }
 
+  // One persistent OCR worker, configured once for receipts (PSM 4 = single column of
+  // variable-size text; keep inter-word spacing so columns stay separable). Reusing it
+  // makes every scan after the first much faster.
+  var _worker = null;
+  function ocrProgress(m) {
+    if (m.status === 'recognizing text') {
+      $('bar-fill').style.width = Math.round(12 + m.progress * 86) + '%';
+    } else if (!_worker) {
+      $('progress-label').textContent = 'Loading OCR engine… (first run only, then cached)';
+    }
+  }
+  async function getWorker() {
+    if (_worker) return _worker;
+    var w = await Tesseract.createWorker('eng', 1, {
+      logger: ocrProgress
+    });
+    await w.setParameters({ tessedit_pageseg_mode: '4', preserve_interword_spaces: '1' });
+    _worker = w;
+    return _worker;
+  }
+
   async function processImage(file) {
     $('review').classList.remove('show');
     var prog = $('progress'); prog.classList.add('show');
     $('bar-fill').style.width = '3%';
-    $('progress-label').textContent = 'Preparing image…';
+    $('progress-label').textContent = 'Enhancing image…';
     try {
-      var big = await downscale(file, 1600, { allowUpscale: true, grayscale: true, quality: 0.95 }); // OCR input
-      var stored = await downscale(file, 1200);        // stored copy (smaller)
+      var big = await downscale(file, 1600, { allowUpscale: true, binarize: true, quality: 0.95 }); // OCR input (adaptive B/W)
+      var stored = await downscale(file, 1200);        // stored copy (color, smaller)
       $('preview').src = URL.createObjectURL(big.blob);
       $('progress-label').textContent = 'Reading text (on-device OCR)…';
-      var result = await Tesseract.recognize(big.blob, 'eng', {
-        logger: function (m) {
-          if (m.status === 'recognizing text') {
-            $('bar-fill').style.width = Math.round(10 + m.progress * 88) + '%';
-          } else {
-            $('progress-label').textContent = 'Loading OCR engine… (first run only, then cached)';
-          }
-        }
-      });
+      var worker = await getWorker();
+      var result = await worker.recognize(big.blob);
       $('bar-fill').style.width = '100%';
       var text = (result && result.data && result.data.text) || '';
       var parsed = C.parseReceipt(text);
