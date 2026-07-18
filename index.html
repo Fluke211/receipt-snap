@@ -210,6 +210,27 @@
   .alloc-remainder.bad { color: var(--warn); }
   .alloc-note { font-size: 11.5px; color: var(--muted-2); margin-top: 6px; line-height: 1.45; }
 
+  /* Line items */
+  .items-list { max-height: 190px; overflow-y: auto; margin-top: 6px; border: 1px solid var(--line); border-radius: 11px; background: var(--bg-2); }
+  .item-row { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-bottom: 1px solid var(--line); font-size: 13.5px; }
+  .item-row:last-child { border-bottom: 0; }
+  .item-row input[type=checkbox] { width: 18px; height: 18px; accent-color: var(--accent); flex: none; }
+  .item-row .idesc { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text); }
+  .item-row .iamt { font-variant-numeric: tabular-nums; color: var(--muted); }
+  .items-actions { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; margin-top: 8px; }
+  .items-actions select { height: 42px; padding: 8px 30px 8px 10px; font-size: 13.5px; background-position: right 8px center; }
+
+  /* Category drill-down */
+  .catline { cursor: pointer; transition: border-color .15s; position: relative; }
+  .catline:active { border-color: var(--accent-line); }
+  .catline .chev { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--muted-2); font-size: 17px; }
+  .cat-item { display: flex; align-items: center; gap: 10px; padding: 12px 4px; border-bottom: 1px solid var(--line); cursor: pointer; }
+  .cat-item:last-child { border-bottom: 0; }
+  .cat-item .ci-date { font-size: 12px; color: var(--muted); flex: none; width: 78px; font-variant-numeric: tabular-nums; }
+  .cat-item .ci-m { flex: 1; min-width: 0; font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cat-item .ci-amt { font-weight: 600; font-variant-numeric: tabular-nums; }
+  .cat-total { display: flex; justify-content: space-between; padding: 12px 4px 2px; font-weight: 650; }
+
   /* Detail overlay */
   .detail-overlay {
     position: fixed; inset: 0; z-index: 30; display: none; overflow-y: auto;
@@ -282,6 +303,21 @@
       <select id="f-category"></select>
       <div class="sc" id="f-schedc" style="font-size:12px;color:var(--muted);margin-top:6px;"></div>
 
+      <div id="items-section" hidden>
+        <div class="split-head">
+          <label>Items on this receipt (<span id="items-count">0</span>)</label>
+          <button class="link-btn" id="items-toggle" type="button">Show</button>
+        </div>
+        <div id="items-body" hidden>
+          <div class="items-list" id="items-list"></div>
+          <div class="items-actions">
+            <select id="items-cat"></select>
+            <button class="link-btn" id="items-add" type="button">Split selected (+tax) →</button>
+          </div>
+          <div class="alloc-note" id="items-note"></div>
+        </div>
+      </div>
+
       <div class="split-head">
         <label>Split this receipt</label>
         <button class="link-btn" id="btn-add-split" type="button">+ Add split</button>
@@ -320,13 +356,21 @@
       <div class="stat"><div class="v" id="s-count">0</div><div class="l">Receipts</div></div>
     </div>
     <div id="cat-breakdown"></div>
-    <div class="btns">
+    <div class="section-label">Export for taxes</div>
+    <select id="export-format" style="margin-top:4px">
+      <option value="cpa">CPA packet — CSV (works everywhere)</option>
+      <option value="excel">Excel workbook — tabbed (.xls)</option>
+      <option value="txf">TurboTax / H&amp;R Block / TaxAct (.txf)</option>
+      <option value="qbo">QuickBooks Online — bank CSV</option>
+      <option value="sheets">Google Sheets / LibreOffice — CSV</option>
+    </select>
+    <p class="hint" id="export-hint" style="text-align:left;margin-top:8px"></p>
+    <div class="btns" style="margin-top:10px">
       <button class="primary" id="btn-export">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
-        Export CSV for taxes
+        Export
       </button>
     </div>
-    <p class="hint">CSV has one row per allocation: date, merchant, amount, category, Schedule&nbsp;C line, notes — split receipts export each part.</p>
 
     <div class="section-label">Backup</div>
     <div class="btns" style="margin-top:8px">
@@ -337,6 +381,20 @@
     <p class="hint">Backup saves all receipts <em>including photos</em> to one file — keep it in iCloud Drive/Files. Restore merges it back on any device.</p>
   </section>
 </main>
+
+<!-- Category drill-down overlay -->
+<div class="detail-overlay" id="catview" style="z-index:25">
+  <div class="detail-card">
+    <div class="detail-top">
+      <h3 id="cv-title">Category</h3>
+      <button class="detail-close" id="cv-close">✕</button>
+    </div>
+    <div class="sc" id="cv-schedc" style="font-size:12px;color:var(--muted);margin-bottom:6px;"></div>
+    <div id="cv-list"></div>
+    <div class="cat-total"><span>Total</span><span id="cv-total"></span></div>
+    <p class="hint" style="text-align:left">Tap any entry to open the full receipt for edits.</p>
+  </div>
+</div>
 
 <!-- Receipt detail overlay -->
 <div class="detail-overlay" id="detail">
@@ -356,6 +414,20 @@
     <label>Tax category</label>
     <select id="d-category"></select>
     <div class="sc" id="d-schedc" style="font-size:12px;color:var(--muted);margin-top:6px;"></div>
+    <div id="d-items-section" hidden>
+      <div class="split-head">
+        <label>Items on this receipt (<span id="d-items-count">0</span>)</label>
+        <button class="link-btn" id="d-items-toggle" type="button">Show</button>
+      </div>
+      <div id="d-items-body" hidden>
+        <div class="items-list" id="d-items-list"></div>
+        <div class="items-actions">
+          <select id="d-items-cat"></select>
+          <button class="link-btn" id="d-items-add" type="button">Split selected (+tax) →</button>
+        </div>
+        <div class="alloc-note" id="d-items-note"></div>
+      </div>
+    </div>
     <div class="split-head">
       <label>Splits</label>
       <button class="link-btn" id="d-add-split" type="button">+ Add split</button>
@@ -768,6 +840,100 @@
     return null;
   }
 
+  // ---- Line items & tax ----
+  var NOT_ITEM = /(sub\s*-?\s*total|subtotal|total|tax|\bget\b|\bhst\b|\bgst\b|tip|gratuity|change|cash|visa|master|amex|discover|debit|credit|card|balance|amount|approved|auth|member|account|savings|instant|items?\s+sold|number|payment|tender|refund|due|purchase|transaction|trm|trn|whse|op\s*[#:$]|reg(ister)?\s*#|invoice|receipt)/i;
+  var ITEM_LINE = /^(.{2,48}?)\s+\$?([0-9]{1,4}[.,][0-9]{2})\s*(-)?\s*[A-Za-z]?\s*$/;
+
+  function cleanItemDesc(s) {
+    return s
+      .replace(/^[A-Z]{1,2}[\s.\-:]+/, '')        // leading dept/tax flag ("E ", "F. ")
+      .replace(/\b\d{5,}\b/g, ' ')                // long SKU numbers
+      .replace(/[*#=_~|]+/g, ' ')
+      .replace(/\s{2,}/g, ' ')
+      .trim();
+  }
+
+  function extractLineItems(lines) {
+    var items = [];
+    for (var i = 0; i < lines.length; i++) {
+      var line = lines[i];
+      if (NOT_ITEM.test(line)) continue;
+      var m = line.match(ITEM_LINE);
+      if (!m) continue;
+      if (m[3]) continue;                          // trailing '-' → credit/discount, skip
+      var amount = normalizeAmount(m[2]);
+      if (amount === null || amount <= 0 || amount > 100000) continue;
+      var desc = cleanItemDesc(m[1]);
+      if (desc.length < 2 || !/[A-Za-z]{2}/.test(desc)) continue;
+      items.push({ desc: desc, amount: amount });
+    }
+    return items;
+  }
+
+  // Tax rate ≈ taxTotal / subtotal, derived from the receipt's own lines.
+  function extractTaxInfo(lines) {
+    var subtotal = null, tax = null;
+    var moneyRe = MONEY;
+    for (var i = 0; i < lines.length; i++) {
+      var line = lines[i];
+      var m = line.match(moneyRe);
+      var v = m ? normalizeAmount(m[1]) : null;
+      if (v === null) {
+        // OCR often scrambles order — amount may sit on the next OR previous line
+        var nm = (lines[i + 1] || '').match(moneyRe);
+        if (nm && !NOT_ITEM.test(lines[i + 1] || '')) v = normalizeAmount(nm[1]);
+        if (v === null) {
+          var pm = (lines[i - 1] || '').match(moneyRe);
+          if (pm && !/[a-z]{3}/i.test((lines[i - 1] || '').replace(pm[0], ''))) v = normalizeAmount(pm[1]);
+        }
+      }
+      if (v === null || v < 0) continue;
+      if (/sub\s*-?\s*total|subtotal/i.test(line) && subtotal === null) subtotal = v;
+      else if (/(total\s*tax|sales\s*tax|\btax\b|\bget\b|\bgst\b|\bhst\b|\bvat\b)/i.test(line) && !/taxable/i.test(line)) {
+        if (tax === null || v > tax) tax = v;      // "TOTAL TAX" usually prints last/largest
+      }
+    }
+    var rate = (subtotal && tax && tax < subtotal * 0.25) ? tax / subtotal : null;
+    if (rate === null && tax) {
+      // fallback: derive from grand total (rate = tax / (total - tax))
+      var grand = extractTotal(lines);
+      if (grand && grand > tax * 2 && tax / (grand - tax) < 0.25) rate = tax / (grand - tax);
+    }
+    return { subtotal: subtotal, tax: tax, rate: rate };
+  }
+
+  // ---- TXF (Tax Exchange Format v042) Schedule C expense codes ----
+  // Verified against the TXF v042 specification (taxdataexchange.org).
+  var TXF_CODES = {
+    'Advertising & Marketing': 304,
+    'Car & Truck / Fuel': 306,
+    'Commissions & Fees': 307,
+    'Contract Labor': 685,
+    'Insurance': 310,
+    'Interest Paid': 312,
+    'Professional Services': 298,
+    'Office Supplies': 313,
+    'Rent & Lease': 300,
+    'Repairs & Maintenance': 315,
+    'Supplies & Materials': 301,
+    'Taxes & Licenses': 316,
+    'Travel & Lodging': 317,
+    'Meals & Entertainment': 294,
+    'Utilities & Phone': 318,
+    'Wages & Payroll': 297,
+    // The rest of the business categories flow to "Other business expense"
+    'Software & Subscriptions': 302,
+    'Shipping & Postage': 302,
+    'Bank & Merchant Fees': 302,
+    'Education & Training': 302,
+    'Dues & Memberships': 302,
+    'Employee Benefits': 302,
+    'General Merchandise': 302,
+    'Home Office': null,             // Form 8829 — not a plain Sch C expense code
+    'Depreciation / Equipment': null, // Form 4562 — needs asset entry, not a TXF expense
+    'Inventory / COGS': null          // Part III COGS — excluded from expense TXF
+  };
+
   function parseReceipt(rawText) {
     var text = (rawText || '').replace(/\r/g, '');
     var lines = text.split('\n').map(function (l) { return l.trim(); }).filter(Boolean);
@@ -776,7 +942,13 @@
     var total = extractTotal(lines);
     var date = extractDate(text);
     var category = classify(text, merchant);
+    var items = extractLineItems(lines);
+    var taxInfo = extractTaxInfo(lines);
     return {
+      items: items,
+      taxRate: taxInfo.rate,
+      taxTotal: taxInfo.tax,
+      subtotal: taxInfo.subtotal,
       merchant: merchant,
       total: total,
       date: date,
@@ -793,6 +965,9 @@
     extractTotal: extractTotal,
     extractDate: extractDate,
     extractMerchant: extractMerchant,
+    extractLineItems: extractLineItems,
+    extractTaxInfo: extractTaxInfo,
+    TXF_CODES: TXF_CODES,
     CATEGORIES: CATEGORIES.map(function (c) { return { name: c.name, scheduleC: c.scheduleC, group: c.group || 'Other' }; })
       .concat([{ name: 'Uncategorized', scheduleC: 'Review manually', group: 'Not Schedule C' }]),
     GROUP_ORDER: ['Everyday Operations', 'Vehicle & Travel', 'Facilities', 'People & Services',
@@ -865,6 +1040,8 @@
   var catSel = $('f-category');
   fillCategorySelect(catSel);
   fillCategorySelect($('d-category'));
+  fillCategorySelect($('items-cat'));
+  fillCategorySelect($('d-items-cat'));
   catSel.addEventListener('change', function () {
     $('f-schedc').textContent = catSel.selectedOptions[0] ? catSel.selectedOptions[0].dataset.sc : '';
   });
@@ -907,6 +1084,73 @@
       ? '⚠ Splits exceed the total by ' + money(-rem)
       : money(rem) + ' remains under the main category above';
   }
+  // ---------- line items UI (shared review + detail) ----------
+  function setupItems(prefix, items, taxRate, allocContainer, remainderFn) {
+    var section = $(prefix + 'items-section');
+    var list = $(prefix + 'items-list');
+    var body = $(prefix + 'items-body');
+    var note = $(prefix + 'items-note');
+    if (!items || !items.length) { section.hidden = true; return; }
+    section.hidden = false; body.hidden = true;
+    $(prefix + 'items-toggle').textContent = 'Show';
+    $(prefix + 'items-count').textContent = items.length;
+    note.textContent = taxRate
+      ? 'Tax detected at ' + (taxRate * 100).toFixed(2) + '% — added proportionally to selected items.'
+      : 'No tax rate detected on this receipt — selected items sum as-is.';
+    list.innerHTML = '';
+    items.forEach(function (it, i) {
+      var row = document.createElement('label'); row.className = 'item-row';
+      row.innerHTML = '<input type="checkbox" data-i="' + i + '">' +
+        '<span class="idesc">' + esc(it.desc) + '</span>' +
+        '<span class="iamt">' + money(it.amount) + '</span>';
+      list.appendChild(row);
+    });
+    $(prefix + 'items-toggle').onclick = function () {
+      body.hidden = !body.hidden;
+      this.textContent = body.hidden ? 'Show' : 'Hide';
+    };
+    $(prefix + 'items-add').onclick = function () {
+      var checked = list.querySelectorAll('input:checked');
+      if (!checked.length) { toast('Tick the items to split first'); return; }
+      var sum = 0;
+      checked.forEach(function (cb) { sum += items[+cb.dataset.i].amount; });
+      var tax = taxRate ? sum * taxRate : 0;
+      var amount = Math.round((sum + tax) * 100) / 100;
+      allocRow(allocContainer, { category: $(prefix + 'items-cat').value, amount: amount }, remainderFn);
+      checked.forEach(function (cb) { cb.checked = false; });
+      remainderFn();
+      toast('Split added: ' + money(amount) + (tax ? ' (incl. ' + money(Math.round(tax * 100) / 100) + ' est. tax)' : ''));
+    };
+  }
+
+  // ---------- merchant memory: learn corrections per store ----------
+  var MEM_KEY = 'rs-merchant-memory';
+  var MEM_LINE = /(\bwh?se\b|warehouse|store|shop|str)\s*[:#]?\s*\d{2,}|#\s*\d{2,4}\b|\b\d{5}(-\d{4})?\b|\b(street|st\.|ave|avenue|blvd|suite|drive|dr\.|road|rd\.|hwy)\b/i;
+  function memNorm(s) { return s.toLowerCase().replace(/[^a-z0-9#]+/g, ' ').replace(/\s+/g, ' ').trim(); }
+  function memKeysFor(text) {
+    var keys = [];
+    (text || '').split('\n').slice(0, 12).forEach(function (l) {
+      l = l.trim();
+      if (l.length >= 6 && l.length <= 48 && MEM_LINE.test(l)) {
+        var k = memNorm(l);
+        if (k.length >= 6) keys.push(k);
+      }
+    });
+    return keys;
+  }
+  function memLoad() { try { return JSON.parse(localStorage.getItem(MEM_KEY) || '{}'); } catch (e) { return {}; } }
+  function memLookup(text) {
+    var map = memLoad(), keys = memKeysFor(text);
+    for (var i = 0; i < keys.length; i++) if (map[keys[i]]) return map[keys[i]];
+    return null;
+  }
+  function memLearn(text, merchant) {
+    if (!merchant || merchant === 'Unknown merchant') return;
+    var map = memLoad(), keys = memKeysFor(text), changed = false;
+    keys.forEach(function (k) { if (map[k] !== merchant) { map[k] = merchant; changed = true; } });
+    if (changed) { try { localStorage.setItem(MEM_KEY, JSON.stringify(map)); } catch (e) {} }
+  }
+
   // Build the final allocation list for a record: splits + remainder under main category
   function buildAllocations(total, mainCategory, container) {
     var splits = readAllocs(container);
@@ -1000,45 +1244,62 @@
     return { canvas: canvas, white: white, w: w, h: h };
   }
 
-  // Find the receipt (bright paper region) via row/column whiteness profiles.
-  // Background clutter (desk, keyboard) thresholds mostly dark; paper mostly white.
+  // Find the receipt as the LARGEST connected bright region (coarse-grid flood fill).
+  // Robust against other papers/bright clutter at the frame edges — those form their
+  // own smaller components and get ignored.
   function findReceiptBox(bin) {
     var w = bin.w, h = bin.h, white = bin.white;
-    var rowRatio = new Float32Array(h), colCount = new Float32Array(w);
-    for (var y = 0; y < h; y++) {
-      var c = 0;
-      for (var x = 0; x < w; x++) c += white[y * w + x];
-      rowRatio[y] = c / w;
-    }
-    // largest contiguous run of rows that look papery
-    var TH = 0.30, best = null, start = -1;
-    for (var y2 = 0; y2 <= h; y2++) {
-      var papery = y2 < h && rowRatio[y2] > TH;
-      if (papery && start === -1) start = y2;
-      if (!papery && start !== -1) {
-        if (!best || (y2 - start) > (best[1] - best[0])) best = [start, y2];
-        start = -1;
+    var CELL = 16;
+    var gw = Math.ceil(w / CELL), gh = Math.ceil(h / CELL);
+    var grid = new Uint8Array(gw * gh);
+    for (var gy = 0; gy < gh; gy++) {
+      for (var gx = 0; gx < gw; gx++) {
+        var x0 = gx * CELL, y0 = gy * CELL;
+        var x1 = Math.min(w, x0 + CELL), y1 = Math.min(h, y0 + CELL);
+        var cnt = 0, tot = (x1 - x0) * (y1 - y0);
+        for (var y = y0; y < y1; y++) {
+          for (var x = x0; x < x1; x++) cnt += white[y * w + x];
+        }
+        if (cnt / tot > 0.5) grid[gy * gw + gx] = 1;   // papery cell
       }
     }
-    if (!best || (best[1] - best[0]) < h * 0.25) return null; // too small/ambiguous → skip crop
-    var y0 = best[0], y1 = best[1];
-    // column whiteness within those rows
-    for (var x2 = 0; x2 < w; x2++) {
-      var cc = 0;
-      for (var yy = y0; yy < y1; yy++) cc += white[yy * w + x2];
-      colCount[x2] = cc / (y1 - y0);
+    // flood fill (4-neighborhood) to find the largest bright component
+    var label = new Int32Array(gw * gh); // 0 = unvisited
+    var bestSize = 0, bestBounds = null, cur = 0;
+    var stack = [];
+    for (var i = 0; i < gw * gh; i++) {
+      if (!grid[i] || label[i]) continue;
+      cur++;
+      var size = 0, minX = gw, maxX = -1, minY = gh, maxY = -1;
+      stack.length = 0; stack.push(i); label[i] = cur;
+      while (stack.length) {
+        var p = stack.pop(); size++;
+        var py = (p / gw) | 0, px2 = p % gw;
+        if (px2 < minX) minX = px2; if (px2 > maxX) maxX = px2;
+        if (py < minY) minY = py; if (py > maxY) maxY = py;
+        var nbrs = [p - 1, p + 1, p - gw, p + gw];
+        for (var n = 0; n < 4; n++) {
+          var q = nbrs[n];
+          if (q < 0 || q >= gw * gh) continue;
+          if (n === 0 && px2 === 0) continue;
+          if (n === 1 && px2 === gw - 1) continue;
+          if (grid[q] && !label[q]) { label[q] = cur; stack.push(q); }
+        }
+      }
+      if (size > bestSize) { bestSize = size; bestBounds = [minX, minY, maxX, maxY]; }
     }
-    var x0 = 0, x1 = w;
-    while (x0 < w && colCount[x0] < TH) x0++;
-    while (x1 > x0 && colCount[x1 - 1] < TH) x1--;
-    if ((x1 - x0) < w * 0.2) return null;
-    // small margin
-    var mx = Math.round((x1 - x0) * 0.02), my = Math.round((y1 - y0) * 0.02);
-    x0 = Math.max(0, x0 - mx); x1 = Math.min(w, x1 + mx);
-    y0 = Math.max(0, y0 - my); y1 = Math.min(h, y1 + my);
-    var area = (x1 - x0) * (y1 - y0);
-    if (area > w * h * 0.92) return null; // basically the whole frame → nothing to crop
-    return { x: x0, y: y0, w: x1 - x0, h: y1 - y0 };
+    if (!bestBounds) return null;
+    var areaFrac = bestSize / (gw * gh);
+    if (areaFrac < 0.06) return null;                 // too small — probably not the receipt
+    // convert grid bounds → pixels with a small margin
+    var mx = CELL, my = CELL;
+    var bx0 = Math.max(0, bestBounds[0] * CELL - mx);
+    var by0 = Math.max(0, bestBounds[1] * CELL - my);
+    var bx1 = Math.min(w, (bestBounds[2] + 1) * CELL + mx);
+    var by1 = Math.min(h, (bestBounds[3] + 1) * CELL + my);
+    if ((bx1 - bx0) * (by1 - by0) > w * h * 0.94) return null; // whole frame → nothing to crop
+    if ((bx1 - bx0) < w * 0.15 || (by1 - by0) < h * 0.15) return null;
+    return { x: bx0, y: by0, w: bx1 - bx0, h: by1 - by0 };
   }
 
   function cropCanvas(src, box, sx) {
@@ -1118,6 +1379,17 @@
       $('bar-fill').style.width = '100%';
       var text = (result && result.data && result.data.text) || '';
       var parsed = C.parseReceipt(text);
+      // Merchant memory: if Tyler corrected this store before, use his name for it
+      var remembered = memLookup(text);
+      if (remembered) {
+        parsed.rawMerchant = parsed.merchant;
+        parsed.merchant = remembered;
+        parsed.merchantRemembered = true;
+        var recls = C.classify(text, remembered);
+        if (recls.name !== 'Uncategorized' && parsed.category === 'Uncategorized') {
+          parsed.category = recls.name; parsed.scheduleC = recls.scheduleC; parsed.confidence = recls.confidence;
+        }
+      }
       pending = { imageBlob: storedBlob, thumb: makeThumb(storedCanvas), ocrText: text, parsed: parsed, editingId: null, createdAt: null };
       fillReview(parsed, text);
       prog.classList.remove('show');
@@ -1140,11 +1412,14 @@
     $('alloc-note').hidden = false;
     $('ocr-text').textContent = text || '(no text found)';
     var confEl = $('conf');
-    confEl.className = 'conf ' + parsed.confidence;
-    confEl.textContent = parsed.category === 'Uncategorized'
+    confEl.className = 'conf ' + (parsed.merchantRemembered ? 'high' : parsed.confidence);
+    confEl.textContent = parsed.merchantRemembered
+      ? '★ Merchant remembered from a previous visit' + (parsed.category !== 'Uncategorized' ? ' — filed as “' + parsed.category + '”' : '')
+      : parsed.category === 'Uncategorized'
       ? '⚠️ Couldn’t auto-categorize — please pick a category'
       : 'Auto-categorized as “' + parsed.category + '” (' + parsed.confidence + ' confidence' +
         (parsed.matchedKeywords.length ? ' — matched: ' + parsed.matchedKeywords.slice(0, 3).join(', ') : '') + ')';
+    setupItems('', parsed.items, parsed.taxRate, $('alloc-rows'), reviewRemainder);
     $('review').classList.add('show');
     $('review').scrollIntoView({ behavior: 'smooth' });
   }
@@ -1178,6 +1453,7 @@
     };
     if (pending.editingId != null) { rec.id = pending.editingId; await putReceipt(rec); }
     else { await addReceipt(rec); }
+    memLearn(rec.ocrText, rec.merchant);   // learn this store's name for next time
     pending = null;
     $('review').classList.remove('show');
     toast('Saved ✓ ' + rec.merchant + ' — ' + money(rec.total));
@@ -1243,6 +1519,11 @@
       allocRow(rows, a, detailRemainder);
     });
     detailRemainder();
+    // line items (re-derived from the stored OCR text)
+    var dLines = (r.ocrText || '').split('\n').map(function (l) { return l.trim(); }).filter(Boolean);
+    var dItems = C.extractLineItems(dLines);
+    var dTax = C.extractTaxInfo(dLines);
+    setupItems('d-', dItems, dTax.rate, rows, detailRemainder);
     $('detail').classList.add('show');
     $('detail').scrollTop = 0;
   }
@@ -1265,9 +1546,11 @@
     r.notes = $('d-notes').value.trim();
     r.allocations = buildAllocations(total, r.category, $('d-alloc-rows'));
     await putReceipt(r);
+    memLearn(r.ocrText, r.merchant);
     $('detail').classList.remove('show');
     toast('Saved ✓');
     renderList();
+    if ($('catview').classList.contains('show') && lastCatView) openCatView(lastCatView);
   });
   $('d-delete').addEventListener('click', async function () {
     if (detailId == null) return;
@@ -1276,6 +1559,7 @@
     $('detail').classList.remove('show');
     toast('Deleted');
     renderList();
+    if ($('catview').classList.contains('show') && lastCatView) openCatView(lastCatView);
   });
 
   // ---------- summary (by allocation; business vs personal separated) ----------
@@ -1303,7 +1587,6 @@
     $('s-count').textContent = filtered.length;
     var label = document.querySelector('#view-summary .stat .l');
     if (label) label.textContent = otherTotal > 0 ? 'Business (Schedule C) — plus ' + money(otherTotal) + ' personal/other' : 'Business (Schedule C) captured';
-    var maxSum = Math.max.apply(null, Object.keys(byCat).map(function (k) { return byCat[k].sum; }).concat([1]));
     $('cat-breakdown').innerHTML = Object.keys(byCat).sort(function (a, b) {
         // business categories first, then by size
         var ba = isBusiness(a) ? 0 : 1, bb = isBusiness(b) ? 0 : 1;
@@ -1311,36 +1594,219 @@
       })
       .map(function (k) {
         var c = byCat[k];
-        return '<div class="catline"><div class="top"><b>' + esc(k) + ' (' + c.n + ')</b><span>' + money(c.sum) + '</span></div>' +
+        return '<div class="catline" data-cat="' + esc(k) + '"><div class="top" style="padding-right:18px"><b>' + esc(k) + ' (' + c.n + ')</b><span>' + money(c.sum) + '</span></div>' +
           '<div class="sc">' + esc(c.sc || '') + '</div>' +
-          '<div class="meter"><div style="width:' + Math.round(c.sum / maxSum * 100) + '%"></div></div></div>';
+          '<span class="chev">›</span></div>';
       }).join('') || '<div class="empty">Nothing to summarize yet.</div>';
+    $('cat-breakdown').querySelectorAll('.catline').forEach(function (el) {
+      el.addEventListener('click', function () { openCatView(el.dataset.cat); });
+    });
   }
 
-  // ---------- CSV export (one row per allocation) ----------
+  // ---------- category drill-down ----------
+  var lastCatView = null;
+  async function openCatView(cat) {
+    lastCatView = cat;
+    var rs = await allReceipts();
+    var y = $('year-filter').value;
+    var filtered = y ? rs.filter(function (r) { return (r.date || '').slice(0, 4) === y; }) : rs;
+    var entries = [];
+    filtered.forEach(function (r) {
+      allocationsOf(r).forEach(function (a) {
+        if (a.category === cat) entries.push({ r: r, amount: a.amount || 0 });
+      });
+    });
+    entries.sort(function (a, b) { return (b.r.date || '').localeCompare(a.r.date || ''); });
+    var sum = entries.reduce(function (s, e) { return s + e.amount; }, 0);
+    $('cv-title').textContent = cat + (y ? ' — ' + y : '');
+    $('cv-schedc').textContent = SC_BY_NAME[cat] || '';
+    $('cv-total').textContent = money(sum);
+    $('cv-list').innerHTML = entries.map(function (e, i) {
+      return '<div class="cat-item" data-id="' + e.r.id + '">' +
+        '<span class="ci-date">' + esc(e.r.date || '') + '</span>' +
+        '<span class="ci-m">' + esc(e.r.merchant) + (e.r.notes ? ' <span style="opacity:.6">📝</span>' : '') +
+        (e.amount !== e.r.total ? ' <span style="color:var(--muted-2);font-size:11px">(part of ' + money(e.r.total) + ')</span>' : '') + '</span>' +
+        '<span class="ci-amt">' + money(e.amount) + '</span></div>';
+    }).join('') || '<div class="empty">Nothing here for this period.</div>';
+    $('cv-list').querySelectorAll('.cat-item').forEach(function (el) {
+      el.addEventListener('click', function () { openDetail(+el.dataset.id); });
+    });
+    $('catview').classList.add('show');
+    $('catview').scrollTop = 0;
+  }
+  $('cv-close').addEventListener('click', function () {
+    $('catview').classList.remove('show');
+    renderSummary();
+  });
+
+  // ---------- Export Center ----------
+  var EXPORT_HINTS = {
+    cpa: 'One clean table, one row per allocation: date, merchant, amount, category, Schedule C line, business flag, notes. Business rows first — hand it straight to your CPA.',
+    excel: 'A tabbed workbook: Summary (totals by category, Schedule C vs personal separated), Business Transactions, Personal & Other. Opens in Excel and LibreOffice — Excel may show a one-time "verify format" prompt, choose Yes.',
+    txf: 'Tax Exchange Format with official Schedule C codes — TurboTax Desktop, H&R Block, and TaxAct import it directly (File → Import). Exports business expense totals per Schedule C line for the selected year. COGS, depreciation, and personal items are excluded (those need direct entry).',
+    qbo: 'QuickBooks Online bank-upload format (Date, Description, Amount as money out). In QBO: Transactions → Banking → Upload from file.',
+    sheets: 'Same CPA table as CSV — Google Sheets: File → Import → Upload. LibreOffice Calc opens it directly (or use the Excel workbook option for tabs).'
+  };
+  function updateExportHint() { $('export-hint').textContent = EXPORT_HINTS[$('export-format').value]; }
+  $('export-format').addEventListener('change', updateExportHint);
+  updateExportHint();
+
+  function exportRows(filtered) {
+    var rows = [];
+    filtered.slice().sort(function (a, b) { return (a.date || '').localeCompare(b.date || ''); }).forEach(function (r) {
+      var allocs = allocationsOf(r);
+      allocs.forEach(function (a, i) {
+        rows.push({
+          date: r.date || '', merchant: r.merchant || '', amount: a.amount || 0,
+          category: a.category, sc: a.scheduleC || SC_BY_NAME[a.category] || '',
+          business: isBusiness(a.category), notes: r.notes || '', rid: 'R' + r.id,
+          split: allocs.length > 1 ? (i + 1) + ' of ' + allocs.length : ''
+        });
+      });
+    });
+    // business first, then chronological (already chronological within stable sort)
+    return rows.sort(function (a, b) { return (a.business ? 0 : 1) - (b.business ? 0 : 1) || a.date.localeCompare(b.date); });
+  }
+  function toCSV(table) {
+    return table.map(function (row) {
+      return row.map(function (cell) { cell = String(cell == null ? '' : cell); return /[",\n]/.test(cell) ? '"' + cell.replace(/"/g, '""') + '"' : cell; }).join(',');
+    }).join('\r\n');
+  }
+  function download(content, name, mime) {
+    var blob = new Blob([content], { type: mime });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+  }
+  function xmlEsc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+
+  function buildCpaCSV(rows) {
+    var table = [['Date', 'Merchant', 'Amount', 'Category', 'Schedule C Line', 'Business (Y/N)', 'Notes', 'Receipt ID', 'Split Part']];
+    rows.forEach(function (r) {
+      table.push([r.date, r.merchant, r.amount.toFixed(2), r.category, r.sc, r.business ? 'Y' : 'N', r.notes, r.rid, r.split]);
+    });
+    return toCSV(table);
+  }
+
+  function buildExcel(rows, year) {
+    function sheetRows(rws) {
+      return rws.map(function (r) {
+        return '<Row>' +
+          '<Cell><Data ss:Type="String">' + xmlEsc(r.date) + '</Data></Cell>' +
+          '<Cell><Data ss:Type="String">' + xmlEsc(r.merchant) + '</Data></Cell>' +
+          '<Cell ss:StyleID="cur"><Data ss:Type="Number">' + r.amount.toFixed(2) + '</Data></Cell>' +
+          '<Cell><Data ss:Type="String">' + xmlEsc(r.category) + '</Data></Cell>' +
+          '<Cell><Data ss:Type="String">' + xmlEsc(r.sc) + '</Data></Cell>' +
+          '<Cell><Data ss:Type="String">' + xmlEsc(r.notes) + '</Data></Cell>' +
+          '<Cell><Data ss:Type="String">' + xmlEsc(r.rid + (r.split ? ' (' + r.split + ')' : '')) + '</Data></Cell>' +
+          '</Row>';
+      }).join('');
+    }
+    var header = '<Row ss:StyleID="hdr">' + ['Date', 'Merchant', 'Amount', 'Category', 'Schedule C Line', 'Notes', 'Receipt'].map(function (h) {
+      return '<Cell><Data ss:Type="String">' + h + '</Data></Cell>';
+    }).join('') + '</Row>';
+    var biz = rows.filter(function (r) { return r.business; });
+    var other = rows.filter(function (r) { return !r.business; });
+    // summary
+    var byCat = {};
+    rows.forEach(function (r) {
+      byCat[r.category] = byCat[r.category] || { sum: 0, n: 0, sc: r.sc, business: r.business };
+      byCat[r.category].sum += r.amount; byCat[r.category].n++;
+    });
+    var sumHeader = '<Row ss:StyleID="hdr">' + ['Category', 'Schedule C Line', 'Count', 'Total'].map(function (h) {
+      return '<Cell><Data ss:Type="String">' + h + '</Data></Cell>';
+    }).join('') + '</Row>';
+    function sumRows(bizFlag) {
+      return Object.keys(byCat).filter(function (k) { return byCat[k].business === bizFlag; })
+        .sort(function (a, b) { return byCat[b].sum - byCat[a].sum; })
+        .map(function (k) {
+          var c = byCat[k];
+          return '<Row><Cell><Data ss:Type="String">' + xmlEsc(k) + '</Data></Cell>' +
+            '<Cell><Data ss:Type="String">' + xmlEsc(c.sc) + '</Data></Cell>' +
+            '<Cell><Data ss:Type="Number">' + c.n + '</Data></Cell>' +
+            '<Cell ss:StyleID="cur"><Data ss:Type="Number">' + c.sum.toFixed(2) + '</Data></Cell></Row>';
+        }).join('');
+    }
+    var bizTotal = biz.reduce(function (s, r) { return s + r.amount; }, 0);
+    var otherTotal = other.reduce(function (s, r) { return s + r.amount; }, 0);
+    var summary = sumHeader +
+      '<Row ss:StyleID="sec"><Cell><Data ss:Type="String">BUSINESS — SCHEDULE C</Data></Cell></Row>' + sumRows(true) +
+      '<Row ss:StyleID="tot"><Cell><Data ss:Type="String">Business total</Data></Cell><Cell/><Cell/><Cell ss:StyleID="curB"><Data ss:Type="Number">' + bizTotal.toFixed(2) + '</Data></Cell></Row>' +
+      (other.length ? '<Row/><Row ss:StyleID="sec"><Cell><Data ss:Type="String">NOT SCHEDULE C (personal / Schedule A)</Data></Cell></Row>' + sumRows(false) +
+      '<Row ss:StyleID="tot"><Cell><Data ss:Type="String">Personal &amp; other total</Data></Cell><Cell/><Cell/><Cell ss:StyleID="curB"><Data ss:Type="Number">' + otherTotal.toFixed(2) + '</Data></Cell></Row>' : '');
+    function ws(name, content) {
+      return '<Worksheet ss:Name="' + name + '"><Table>' + content + '</Table></Worksheet>';
+    }
+    return '<?xml version="1.0"?><?mso-application progid="Excel.Sheet"?>' +
+      '<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">' +
+      '<Styles>' +
+      '<Style ss:ID="hdr"><Font ss:Bold="1"/><Interior ss:Color="#E8EDF5" ss:Pattern="Solid"/></Style>' +
+      '<Style ss:ID="sec"><Font ss:Bold="1" ss:Color="#4F7CFF"/></Style>' +
+      '<Style ss:ID="tot"><Font ss:Bold="1"/></Style>' +
+      '<Style ss:ID="cur"><NumberFormat ss:Format="&quot;$&quot;#,##0.00"/></Style>' +
+      '<Style ss:ID="curB"><Font ss:Bold="1"/><NumberFormat ss:Format="&quot;$&quot;#,##0.00"/></Style>' +
+      '</Styles>' +
+      ws('Summary' + (year ? ' ' + year : ''), summary) +
+      ws('Business Transactions', header + sheetRows(biz)) +
+      ws('Personal + Other', header + sheetRows(other)) +
+      '</Workbook>';
+  }
+
+  function buildTXF(rows) {
+    // Aggregate business expenses per verified Schedule C TXF code (summary records).
+    var byCode = {}, skipped = 0;
+    rows.forEach(function (r) {
+      if (!r.business) { skipped++; return; }
+      var code = C.TXF_CODES[r.category];
+      if (!code) { skipped++; return; }
+      byCode[code] = byCode[code] || { sum: 0, cats: {} };
+      byCode[code].sum += r.amount;
+      byCode[code].cats[r.category] = true;
+    });
+    var d = new Date();
+    var ds = (d.getMonth() + 1) + '/' + d.getDate() + '/' + d.getFullYear();
+    var out = ['V042', 'AReceiptSnap', 'D' + ds, '^'];
+    Object.keys(byCode).sort(function (a, b) { return a - b; }).forEach(function (code) {
+      out.push('TS', 'N' + code, 'C1', 'L1', '$-' + byCode[code].sum.toFixed(2),
+        'X' + Object.keys(byCode[code].cats).join('; '), '^');
+    });
+    return { content: out.join('\r\n') + '\r\n', codes: Object.keys(byCode).length, skipped: skipped };
+  }
+
+  function buildQBO(rows) {
+    var table = [['Date', 'Description', 'Amount']];
+    rows.forEach(function (r) {
+      var mmddyyyy = r.date ? (r.date.slice(5, 7) + '/' + r.date.slice(8, 10) + '/' + r.date.slice(0, 4)) : '';
+      var desc = r.merchant + ' — ' + r.category + (r.notes ? ' — ' + r.notes : '');
+      table.push([mmddyyyy, desc, (-r.amount).toFixed(2)]);
+    });
+    return toCSV(table);
+  }
+
   $('btn-export').addEventListener('click', async function () {
     var rs = await allReceipts();
     var y = $('year-filter').value;
     var filtered = y ? rs.filter(function (r) { return (r.date || '').slice(0, 4) === y; }) : rs;
     if (!filtered.length) { toast('Nothing to export yet'); return; }
-    var rows = [['Date', 'Merchant', 'Amount', 'Category', 'Schedule C line', 'Business?', 'Notes', 'Receipt #', 'Split part']];
-    filtered.sort(function (a, b) { return (a.date || '').localeCompare(b.date || ''); }).forEach(function (r) {
-      var allocs = allocationsOf(r);
-      allocs.forEach(function (a, i) {
-        rows.push([r.date, r.merchant, (a.amount || 0).toFixed(2), a.category,
-          a.scheduleC || SC_BY_NAME[a.category] || '', isBusiness(a.category) ? 'Y' : 'N',
-          r.notes || '', 'R' + r.id, allocs.length > 1 ? (i + 1) + ' of ' + allocs.length : '']);
-      });
-    });
-    var csv = rows.map(function (row) {
-      return row.map(function (cell) { cell = String(cell == null ? '' : cell); return /[",\n]/.test(cell) ? '"' + cell.replace(/"/g, '""') + '"' : cell; }).join(',');
-    }).join('\n');
-    var blob = new Blob([csv], { type: 'text/csv' });
-    var a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'receiptsnap-export' + (y ? '-' + y : '') + '.csv';
-    document.body.appendChild(a); a.click(); a.remove();
-    toast('CSV exported ✓');
+    var rows = exportRows(filtered);
+    var fmt = $('export-format').value;
+    var suffix = y ? '-' + y : '';
+    if (fmt === 'cpa' || fmt === 'sheets') {
+      download(buildCpaCSV(rows), 'receiptsnap-cpa' + suffix + '.csv', 'text/csv');
+      toast(fmt === 'sheets' ? 'CSV saved — import it in Google Sheets ✓' : 'CPA packet exported ✓');
+    } else if (fmt === 'excel') {
+      download(buildExcel(rows, y), 'receiptsnap-workbook' + suffix + '.xls', 'application/vnd.ms-excel');
+      toast('Excel workbook exported ✓');
+    } else if (fmt === 'txf') {
+      var txf = buildTXF(rows);
+      if (!txf.codes) { toast('No TXF-eligible business expenses in this period'); return; }
+      download(txf.content, 'receiptsnap' + suffix + '.txf', 'text/plain');
+      toast('TXF exported ✓ ' + txf.codes + ' Schedule C lines' + (txf.skipped ? ' (' + txf.skipped + ' rows excluded)' : ''));
+    } else if (fmt === 'qbo') {
+      download(buildQBO(rows), 'receiptsnap-quickbooks' + suffix + '.csv', 'text/csv');
+      toast('QuickBooks CSV exported ✓');
+    }
   });
 
   // ---------- backup / restore (full JSON incl. photos) ----------
@@ -1372,7 +1838,7 @@
         thumb: r.thumb, image: r.imageBlob ? await blobToDataURL(r.imageBlob) : null
       });
     }
-    var payload = { app: 'ReceiptSnap', version: 2, exportedAt: new Date().toISOString(), receipts: out };
+    var payload = { app: 'ReceiptSnap', version: 3, exportedAt: new Date().toISOString(), receipts: out, merchantMemory: memLoad() };
     var blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
     var a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
@@ -1388,6 +1854,11 @@
     try {
       var payload = JSON.parse(await file.text());
       if (!payload || payload.app !== 'ReceiptSnap' || !Array.isArray(payload.receipts)) throw new Error('not a ReceiptSnap backup');
+      if (payload.merchantMemory) {
+        var mm = memLoad();
+        Object.keys(payload.merchantMemory).forEach(function (k) { if (!mm[k]) mm[k] = payload.merchantMemory[k]; });
+        try { localStorage.setItem(MEM_KEY, JSON.stringify(mm)); } catch (e2) {}
+      }
       var existing = await allReceipts();
       var seen = {};
       existing.forEach(function (r) { seen[(r.createdAt || '') + '|' + (r.total || 0)] = true; });
