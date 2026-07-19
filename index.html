@@ -324,10 +324,18 @@
         <div><label>Date</label><input id="f-date" type="date"></div>
         <div><label>Total ($)</label><input id="f-total" type="number" step="0.01" inputmode="decimal" placeholder="0.00"></div>
       </div>
+      <label>Sales tax ($)</label>
+      <input id="f-salestax" type="number" step="0.01" inputmode="decimal" placeholder="0.00">
+      <div class="sc" id="f-salestax-hint" style="font-size:12px;color:var(--muted);margin-top:6px;">Read from the receipt when possible — used to figure your local tax rate.</div>
       <label>Main tax category</label>
       <select id="f-category"></select>
       <div class="sc" id="f-schedc" style="font-size:12px;color:var(--muted);margin-top:6px;"></div>
 
+      <div class="split-head">
+        <label>Split this receipt</label>
+        <button class="link-btn" id="splits-toggle" type="button">Show splits</button>
+      </div>
+      <div id="splits-body" hidden>
       <div id="items-section" hidden>
         <div class="split-head">
           <label>Items on this receipt (<span id="items-count">0</span>)</label>
@@ -343,9 +351,6 @@
         </div>
       </div>
 
-      <div class="split-head">
-        <label>Split this receipt</label>
-      </div>
       <div class="taxrow">
         <div class="taxrate-wrap"><input id="f-taxrate" type="number" step="0.001" inputmode="decimal" placeholder="0"><span>%</span></div>
         <div class="taxsrc" id="f-taxsrc">sales tax rate</div>
@@ -362,6 +367,7 @@
       <div id="alloc-rows"></div>
       <div class="alloc-remainder" id="alloc-remainder" hidden></div>
       <div class="alloc-note" id="alloc-note" hidden>Splits let one receipt cover multiple categories — e.g. business supplies + a personal item. Whatever you don't allocate stays under the main category above.</div>
+      </div><!-- /splits-body -->
 
       <label>Notes</label>
       <textarea id="f-notes" placeholder="e.g. Materials for the Nakamura job; lunch with supplier"></textarea>
@@ -391,6 +397,11 @@
     <div class="stat-row">
       <div class="stat"><div class="v" id="s-total">$0.00</div><div class="l">Total captured</div></div>
       <div class="stat"><div class="v" id="s-count">0</div><div class="l">Receipts</div></div>
+    </div>
+    <div class="stat" style="margin-top:12px">
+      <div class="v" id="s-salestax">$0.00</div>
+      <div class="l" id="s-salestax-l">Sales tax paid</div>
+      <div class="sc" id="s-salestax-note" style="font-size:11px;color:var(--muted-2);margin-top:6px;line-height:1.5">Itemizers can deduct actual sales tax paid (Schedule A, line 5a) instead of state income tax — your personal-portion total is the number that matters there. Business-portion tax is already inside your Schedule C expense amounts.</div>
     </div>
     <div id="cat-breakdown"></div>
     <div class="section-label">Export for taxes</div>
@@ -448,9 +459,16 @@
       <div><label>Date</label><input id="d-date" type="date"></div>
       <div><label>Total ($)</label><input id="d-total" type="number" step="0.01" inputmode="decimal"></div>
     </div>
+    <label>Sales tax ($)</label>
+    <input id="d-salestax" type="number" step="0.01" inputmode="decimal" placeholder="0.00">
     <label>Main tax category</label>
     <select id="d-category"></select>
     <div class="sc" id="d-schedc" style="font-size:12px;color:var(--muted);margin-top:6px;"></div>
+    <div class="split-head">
+      <label>Splits</label>
+      <button class="link-btn" id="d-splits-toggle" type="button">Show splits</button>
+    </div>
+    <div id="d-splits-body" hidden>
     <div id="d-items-section" hidden>
       <div class="split-head">
         <label>Items on this receipt (<span id="d-items-count">0</span>)</label>
@@ -464,9 +482,6 @@
         </div>
         <div class="alloc-note" id="d-items-note"></div>
       </div>
-    </div>
-    <div class="split-head">
-      <label>Splits</label>
     </div>
     <div class="taxrow">
       <div class="taxrate-wrap"><input id="d-taxrate" type="number" step="0.001" inputmode="decimal" placeholder="0"><span>%</span></div>
@@ -483,6 +498,7 @@
     </div>
     <div id="d-alloc-rows"></div>
     <div class="alloc-remainder" id="d-alloc-remainder" hidden></div>
+    </div><!-- /d-splits-body -->
     <label>Notes</label>
     <textarea id="d-notes"></textarea>
     <details class="ocr"><summary>Show raw scanned text</summary><pre id="d-ocr"></pre></details>
@@ -891,7 +907,8 @@
 
   // ---- Line items & tax ----
   var NOT_ITEM = /(sub\s*-?\s*total|subtotal|total|tax|\bget\b|\bhst\b|\bgst\b|tip|gratuity|change|cash|visa|master|amex|discover|debit|credit|card|balance|amount|approved|auth|member|account|savings|instant|items?\s+sold|number|payment|tender|refund|due|purchase|transaction|trm|trn|whse|op\s*[#:$]|reg(ister)?\s*#|invoice|receipt)/i;
-  var ITEM_LINE = /^(.{2,48}?)\s+\$?([0-9]{1,4}[.,][0-9]{2})\s*(-)?\s*[A-Za-z]?\s*$/;
+  var ITEM_LINE = /^(.{2,48}?)\s+\$?([0-9]{1,4}[.,][0-9]{2})\s*(-)?\s*[A-Za-z]{0,2}[*#]?\s*$/;
+  var AMOUNT_ONLY = /^\$?([0-9]{1,4}[.,][0-9]{2})\s*(-)?\s*[A-Za-z]{0,2}[*#]?\s*$/;
 
   function cleanItemDesc(s) {
     return s
@@ -909,11 +926,23 @@
       if (NOT_ITEM.test(line)) continue;
       if (/%/.test(line)) continue;                // "4.712% GET/GAR ..." tax lines, even when misread
       var m = line.match(ITEM_LINE);
-      if (!m) continue;
-      if (m[3]) continue;                          // trailing '-' → credit/discount, skip
-      var amount = normalizeAmount(m[2]);
-      if (amount === null || amount <= 0 || amount > 100000) continue;
-      var desc = cleanItemDesc(m[1]);
+      var amount = null, descRaw = null;
+      if (m && !m[3]) {
+        amount = normalizeAmount(m[2]);
+        descRaw = m[1];
+      } else if (!m) {
+        // Two-column OCR split: a description-only line followed by an amount-only line.
+        var next = lines[i + 1] || '';
+        var am = next.match(AMOUNT_ONLY);
+        if (am && !am[2] && !NOT_ITEM.test(next) &&
+            !/[0-9][.,][0-9]{2}/.test(line) && /[A-Za-z]{3}/.test(line) && line.length <= 40) {
+          amount = normalizeAmount(am[1]);
+          descRaw = line;
+          i++;                                     // consume the amount line
+        }
+      }
+      if (amount === null || amount <= 0 || amount > 100000 || descRaw === null) continue;
+      var desc = cleanItemDesc(descRaw);
       if (desc.length < 2 || !/[A-Za-z]{2}/.test(desc)) continue;
       items.push({ desc: desc, amount: amount });
     }
@@ -1129,9 +1158,10 @@
 
   // ---------- CPA packet CSV ----------
   function buildCpaCSV(rows) {
-    var table = [['Date', 'Merchant', 'Amount', 'Tax Form', 'Category', 'Form Line', 'Notes', 'Receipt ID', 'Split Part']];
+    var table = [['Date', 'Merchant', 'Amount', 'Tax Form', 'Category', 'Form Line', 'Sales Tax Portion', 'Notes', 'Receipt ID', 'Split Part']];
     sortRows(rows).forEach(function (r) {
-      table.push([r.date, r.merchant, r.amount.toFixed(2), C.taxFormOf(r.category), r.category, r.sc, r.notes, r.rid, r.split]);
+      table.push([r.date, r.merchant, r.amount.toFixed(2), C.taxFormOf(r.category), r.category, r.sc,
+        r.taxPortion != null ? r.taxPortion.toFixed(2) : '', r.notes, r.rid, r.split]);
     });
     return BOM + toCSV(table);
   }
@@ -1255,6 +1285,25 @@
     v.addRow(['Want a pie chart? Select a group\'s rows in columns A:B, then Insert → Chart → Pie.'])
       .font = { color: { argb: 'FF8A97AB' } };
 
+    // Sales tax paid (Schedule A actual-expense method support)
+    var stAll = 0, stBiz = 0, stOther = 0;
+    sorted.forEach(function (r) {
+      if (r.taxPortion == null) return;
+      stAll += r.taxPortion;
+      if (r.business) stBiz += r.taxPortion; else stOther += r.taxPortion;
+    });
+    if (stAll > 0) {
+      var sth = s.addRow(['SALES TAX PAID']);
+      sth.font = { bold: true, color: { argb: 'FF4F7CFF' } };
+      [['Total sales tax recorded', stAll], ['On business portions (already inside Schedule C expenses)', stBiz],
+       ['On personal / other portions (Schedule A line 5a candidate)', stOther]].forEach(function (p) {
+        var row = s.addRow([p[0], '', '', Math.round(p[1] * 100) / 100]);
+        row.getCell(4).numFmt = CUR;
+      });
+      s.addRow(['Itemizers may deduct ACTUAL sales tax paid instead of state income tax (Schedule A, line 5a).']).font = { color: { argb: 'FF8A97AB' } };
+      s.addRow(['Only the personal-portion figure belongs there - business-portion tax is already deducted via Schedule C.']).font = { color: { argb: 'FF8A97AB' } };
+      s.addRow([]);
+    }
     s.addRow(['HOW TO USE THIS SHEET']).font = { bold: true };
     [
       'CPA: the Schedule C section above maps 1:1 to Schedule C expense lines.',
@@ -1851,9 +1900,14 @@
     catSel.value = parsed.category;
     $('f-schedc').textContent = parsed.scheduleC || '';
     $('f-notes').value = '';
+    $('f-salestax').value = (parsed.taxTotal && parsed.taxTotal > 0) ? parsed.taxTotal.toFixed(2) : '';
+    $('f-salestax-hint').textContent = (parsed.taxTotal && parsed.taxTotal > 0)
+      ? 'Read from the receipt — correct it if the scan got it wrong.'
+      : 'Not found on the receipt — enter it to track your deductible sales tax.';
     $('alloc-rows').innerHTML = '';
     $('alloc-remainder').hidden = true;
     $('alloc-note').hidden = false;
+    setSplitsOpen('f-', false);
     $('ocr-text').textContent = text || '(no text found)';
     var confEl = $('conf');
     confEl.className = 'conf ' + (parsed.merchantRemembered ? 'high' : parsed.confidence);
@@ -1881,6 +1935,38 @@
   function reviewRemainder() { updateRemainder($('alloc-rows'), $('f-total'), $('alloc-remainder')); }
   $('f-total').addEventListener('input', reviewRemainder);
 
+  // splits show/hide toggles
+  function wireSplitsToggle(btnId, bodyId) {
+    $(btnId).addEventListener('click', function () {
+      var body = $(bodyId);
+      body.hidden = !body.hidden;
+      this.textContent = body.hidden ? 'Show splits' : 'Hide splits';
+    });
+  }
+  wireSplitsToggle('splits-toggle', 'splits-body');
+  wireSplitsToggle('d-splits-toggle', 'd-splits-body');
+  function setSplitsOpen(prefix, open) {
+    $(prefix === 'd-' ? 'd-splits-body' : 'splits-body').hidden = !open;
+    $(prefix === 'd-' ? 'd-splits-toggle' : 'splits-toggle').textContent = open ? 'Hide splits' : 'Show splits';
+  }
+
+  // Sales-tax amount → derive the rate when none is set yet (rate = tax/(total-tax))
+  function wireSalesTaxDerivation(taxId, totalId, prefix) {
+    $(taxId).addEventListener('input', function () {
+      var tax = parseFloat($(taxId).value);
+      var total = parseFloat($(totalId).value);
+      if (tax > 0 && total > tax && !getRate(prefix)) {
+        var rate = tax / (total - tax);
+        if (rate < 0.25) {
+          setRateUI(prefix, rate, 'derived from the sales-tax amount');
+          calcPreview(prefix);
+        }
+      }
+    });
+  }
+  wireSalesTaxDerivation('f-salestax', 'f-total', 'f-');
+  wireSalesTaxDerivation('d-salestax', 'd-total', 'd-');
+
   $('btn-discard').addEventListener('click', function () { pending = null; $('review').classList.remove('show'); });
 
   $('btn-save').addEventListener('click', async function () {
@@ -1895,6 +1981,8 @@
       category: catSel.value,
       scheduleC: scOpt ? scOpt.dataset.sc : '',
       notes: $('f-notes').value.trim(),
+      salesTax: parseFloat($('f-salestax').value) > 0 ? Math.round(parseFloat($('f-salestax').value) * 100) / 100 : null,
+      taxRate: getRate('f-') || null,
       allocations: buildAllocations(total, catSel.value, $('alloc-rows')),
       confidence: pending.parsed ? pending.parsed.confidence : 'low',
       ocrText: pending.ocrText,
@@ -1990,11 +2078,15 @@
     var dCity = C.extractCity(dLines);
     setupItems('d-', dItems, rows, detailRemainder);
     setupCalc('d-', rows, detailRemainder);
+    $('d-salestax').value = (r.salesTax != null && r.salesTax > 0) ? r.salesTax.toFixed(2)
+      : (dTax.tax && dTax.tax > 0 ? dTax.tax.toFixed(2) : '');
     var dMemRate = taxMemLookup(dCity);
-    if (dTax.rate) setRateUI('d-', dTax.rate, dTax.printedRate ? 'printed on receipt' : 'derived from receipt');
+    if (r.taxRate) setRateUI('d-', r.taxRate, 'saved with this receipt');   // Tyler's edit wins forever
+    else if (dTax.rate) setRateUI('d-', dTax.rate, dTax.printedRate ? 'printed on receipt' : 'derived from receipt');
     else if (dMemRate) setRateUI('d-', dMemRate, dCity ? 'remembered for ' + dCity : 'last used');
     else setRateUI('d-', 0, 'not detected — enter your local rate');
     calcPreview('d-');
+    setSplitsOpen('d-', allocs.length > 1);   // receipts already split show their splits
     $('detail').classList.add('show');
     $('detail').scrollTop = 0;
   }
@@ -2011,6 +2103,8 @@
     r.category = $('d-category').value;
     r.scheduleC = SC_BY_NAME[r.category] || '';
     r.notes = $('d-notes').value.trim();
+    r.salesTax = parseFloat($('d-salestax').value) > 0 ? Math.round(parseFloat($('d-salestax').value) * 100) / 100 : null;
+    r.taxRate = getRate('d-') || null;
     r.allocations = buildAllocations(total, r.category, $('d-alloc-rows'));
     await putReceipt(r);
     memLearn(r.ocrText, r.merchant);
@@ -2053,6 +2147,24 @@
     });
     $('s-total').textContent = money(bizTotal);
     $('s-count').textContent = filtered.length;
+    // Sales tax paid: apportioned across allocations by amount share
+    var taxAll = 0, taxBiz = 0, taxOther = 0, taxReceipts = 0;
+    filtered.forEach(function (r) {
+      var st = r.salesTax;
+      if (!(st > 0)) return;
+      taxReceipts++;
+      taxAll += st;
+      var tot = r.total || allocationsOf(r).reduce(function (s, a) { return s + (a.amount || 0); }, 0) || 1;
+      allocationsOf(r).forEach(function (a) {
+        var share = st * ((a.amount || 0) / tot);
+        if (isBusiness(a.category)) taxBiz += share; else taxOther += share;
+      });
+    });
+    $('s-salestax').textContent = money(Math.round(taxAll * 100) / 100);
+    $('s-salestax-l').textContent = taxAll > 0
+      ? 'Sales tax paid (' + taxReceipts + ' receipt' + (taxReceipts === 1 ? '' : 's') + ') — ' +
+        money(Math.round(taxBiz * 100) / 100) + ' business · ' + money(Math.round(taxOther * 100) / 100) + ' personal/other'
+      : 'Sales tax paid — none recorded yet';
     var label = document.querySelector('#view-summary .stat .l');
     if (label) label.textContent = otherTotal > 0 ? 'Business (Schedule C) — plus ' + money(otherTotal) + ' personal/other' : 'Business (Schedule C) captured';
     $('cat-breakdown').innerHTML = Object.keys(byCat).sort(function (a, b) {
@@ -2123,12 +2235,14 @@
     var rows = [];
     filtered.slice().sort(function (a, b) { return (a.date || '').localeCompare(b.date || ''); }).forEach(function (r) {
       var allocs = allocationsOf(r);
+      var tot = r.total || allocs.reduce(function (s, a) { return s + (a.amount || 0); }, 0) || 1;
       allocs.forEach(function (a, i) {
         rows.push({
           date: r.date || '', merchant: r.merchant || '', amount: a.amount || 0,
           category: a.category, sc: a.scheduleC || SC_BY_NAME[a.category] || '',
           business: isBusiness(a.category), notes: r.notes || '', rid: 'R' + r.id,
-          split: allocs.length > 1 ? (i + 1) + ' of ' + allocs.length : ''
+          split: allocs.length > 1 ? (i + 1) + ' of ' + allocs.length : '',
+          taxPortion: (r.salesTax > 0) ? Math.round(r.salesTax * ((a.amount || 0) / tot) * 100) / 100 : null
         });
       });
     });
@@ -2240,6 +2354,7 @@
       out.push({
         createdAt: r.createdAt, merchant: r.merchant, date: r.date, total: r.total,
         category: r.category, scheduleC: r.scheduleC, notes: r.notes || '',
+        salesTax: r.salesTax || null, taxRate: r.taxRate || null,
         allocations: allocationsOf(r), confidence: r.confidence, ocrText: r.ocrText,
         thumb: r.thumb, image: r.imageData || (r.imageBlob ? await blobToDataURL(r.imageBlob).catch(function () { return null; }) : null)
       });
@@ -2271,6 +2386,7 @@
         await addReceipt({
           createdAt: b.createdAt, merchant: b.merchant, date: b.date, total: b.total,
           category: b.category, scheduleC: b.scheduleC, notes: b.notes || '',
+          salesTax: b.salesTax || null, taxRate: b.taxRate || null,
           allocations: b.allocations, confidence: b.confidence, ocrText: b.ocrText,
           thumb: b.thumb, imageData: b.image || null
         });
