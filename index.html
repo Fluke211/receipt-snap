@@ -224,13 +224,15 @@
   .taxrate-wrap input { width: 86px; height: 40px; padding: 8px 10px; font-size: 14px; }
   .taxrate-wrap span { color: var(--muted); font-size: 14px; }
   .taxsrc { font-size: 11.5px; color: var(--muted-2); line-height: 1.4; flex: 1; }
-  .calc { margin-top: 10px; border: 1px dashed var(--line); border-radius: 11px; padding: 10px; }
-  .calc-grid { display: grid; grid-template-columns: 1fr 108px; gap: 8px; }
-  .calc-grid select, .calc-grid input { height: 42px; padding: 8px 10px; font-size: 13.5px; }
-  .calc-grid select { padding-right: 30px; background-position: right 8px center; }
-  .calc-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; }
-  .calc-tax { display: flex; align-items: center; gap: 7px; font-size: 12.5px; color: var(--muted); margin: 0; text-transform: none; letter-spacing: 0; font-weight: 500; }
-  .calc-tax input { width: 17px; height: 17px; accent-color: var(--accent); }
+  .calc { margin-top: 10px; }
+  .calc select { height: 44px; padding: 8px 30px 8px 12px; font-size: 14px; background-position: right 10px center; }
+  .calc-grid { display: grid; grid-template-columns: 1fr auto; gap: 10px; margin-top: 8px; align-items: center; }
+  .calc-grid input[type=number] { height: 44px; padding: 8px 12px; font-size: 14px; }
+  .calc-tax { display: flex; align-items: center; gap: 7px; font-size: 13px; color: var(--muted); margin: 0; text-transform: none; letter-spacing: 0; font-weight: 500; white-space: nowrap; }
+  .calc-preview { margin-top: 8px; font-size: 13px; color: var(--text); font-variant-numeric: tabular-nums; }
+  .calc-preview b { color: var(--accent); font-weight: 650; }
+  button.calc-add { width: 100%; margin-top: 8px; padding: 11px; font-size: 14px; border-radius: 11px; }
+  .alloc-sub { font-size: 11.5px; color: var(--muted-2); margin: 3px 2px 0; font-variant-numeric: tabular-nums; }
 
   /* Line items */
   .items-list { max-height: 190px; overflow-y: auto; margin-top: 6px; border: 1px solid var(--line); border-radius: 11px; background: var(--bg-2); }
@@ -342,21 +344,19 @@
 
       <div class="split-head">
         <label>Split this receipt</label>
-        <button class="link-btn" id="btn-add-split" type="button">+ Add split</button>
       </div>
       <div class="taxrow">
         <div class="taxrate-wrap"><input id="f-taxrate" type="number" step="0.001" inputmode="decimal" placeholder="0"><span>%</span></div>
         <div class="taxsrc" id="f-taxsrc">sales tax rate</div>
       </div>
       <div class="calc">
+        <select id="f-calc-cat"></select>
         <div class="calc-grid">
-          <select id="f-calc-cat"></select>
           <input id="f-calc-amt" type="number" step="0.01" inputmode="decimal" placeholder="Amount $">
+          <label class="calc-tax"><input type="checkbox" id="f-calc-tax" checked> + <span id="f-calc-rate-label">tax</span></label>
         </div>
-        <div class="calc-foot">
-          <label class="calc-tax"><input type="checkbox" id="f-calc-tax" checked> auto-add tax</label>
-          <button class="link-btn" id="f-calc-add" type="button">Add split →</button>
-        </div>
+        <div class="calc-preview" id="f-calc-preview" hidden></div>
+        <button class="ghost calc-add" id="f-calc-add" type="button">+ Add split</button>
       </div>
       <div id="alloc-rows"></div>
       <div class="alloc-remainder" id="alloc-remainder" hidden></div>
@@ -466,21 +466,19 @@
     </div>
     <div class="split-head">
       <label>Splits</label>
-      <button class="link-btn" id="d-add-split" type="button">+ Add split</button>
     </div>
     <div class="taxrow">
       <div class="taxrate-wrap"><input id="d-taxrate" type="number" step="0.001" inputmode="decimal" placeholder="0"><span>%</span></div>
       <div class="taxsrc" id="d-taxsrc">sales tax rate</div>
     </div>
     <div class="calc">
+      <select id="d-calc-cat"></select>
       <div class="calc-grid">
-        <select id="d-calc-cat"></select>
         <input id="d-calc-amt" type="number" step="0.01" inputmode="decimal" placeholder="Amount $">
+        <label class="calc-tax"><input type="checkbox" id="d-calc-tax" checked> + <span id="d-calc-rate-label">tax</span></label>
       </div>
-      <div class="calc-foot">
-        <label class="calc-tax"><input type="checkbox" id="d-calc-tax" checked> auto-add tax</label>
-        <button class="link-btn" id="d-calc-add" type="button">Add split →</button>
-      </div>
+      <div class="calc-preview" id="d-calc-preview" hidden></div>
+      <button class="ghost calc-add" id="d-calc-add" type="button">+ Add split</button>
     </div>
     <div id="d-alloc-rows"></div>
     <div class="alloc-remainder" id="d-alloc-remainder" hidden></div>
@@ -1383,6 +1381,7 @@
 
   // ---------- split allocations UI (shared by review + detail) ----------
   function allocRow(container, alloc, onChange) {
+    var wrap = document.createElement('div'); wrap.className = 'alloc-wrap';
     var row = document.createElement('div'); row.className = 'alloc-row';
     var sel = document.createElement('select'); fillCategorySelect(sel);
     sel.value = alloc.category || 'Personal (non-deductible)';
@@ -1390,17 +1389,30 @@
     amt.type = 'number'; amt.step = '0.01'; amt.inputMode = 'decimal'; amt.placeholder = '0.00';
     if (alloc.amount != null) amt.value = Number(alloc.amount).toFixed(2);
     var x = document.createElement('button'); x.className = 'alloc-x'; x.type = 'button'; x.textContent = '×';
-    sel.addEventListener('change', onChange); amt.addEventListener('input', onChange);
-    x.addEventListener('click', function () { row.remove(); onChange(); });
     row.appendChild(sel); row.appendChild(amt); row.appendChild(x);
-    container.appendChild(row);
+    wrap.appendChild(row);
+    // breakdown note for tax-computed splits: "$36.01 + $1.70 tax = $37.71"
+    if (alloc.base != null && alloc.tax != null && alloc.tax > 0) {
+      row.dataset.base = alloc.base; row.dataset.tax = alloc.tax;
+      var sub = document.createElement('div'); sub.className = 'alloc-sub';
+      sub.textContent = money(alloc.base) + ' + ' + money(alloc.tax) + ' tax = ' + money(alloc.amount);
+      wrap.appendChild(sub);
+      amt.addEventListener('input', function () {   // manual edit invalidates the breakdown
+        delete row.dataset.base; delete row.dataset.tax; sub.remove();
+      }, { once: true });
+    }
+    sel.addEventListener('change', onChange); amt.addEventListener('input', onChange);
+    x.addEventListener('click', function () { wrap.remove(); onChange(); });
+    container.appendChild(wrap);
   }
   function readAllocs(container) {
     return Array.prototype.map.call(container.querySelectorAll('.alloc-row'), function (row) {
-      return {
+      var a = {
         category: row.querySelector('select').value,
         amount: parseFloat(row.querySelector('input').value) || 0
       };
+      if (row.dataset.base) { a.base = parseFloat(row.dataset.base); a.tax = parseFloat(row.dataset.tax); }
+      return a;
     }).filter(function (a) { return a.amount > 0; });
   }
   function updateRemainder(container, totalInput, remEl) {
@@ -1455,26 +1467,51 @@
       var rate = getRate(ratePfx);
       var sum = 0;
       checked.forEach(function (cb) { sum += items[+cb.dataset.i].amount; });
-      var tax = rate ? sum * rate : 0;
+      var tax = rate ? Math.round(sum * rate * 100) / 100 : 0;
       var amount = Math.round((sum + tax) * 100) / 100;
-      allocRow(allocContainer, { category: $(prefix + 'items-cat').value, amount: amount }, remainderFn);
+      allocRow(allocContainer,
+        { category: $(prefix + 'items-cat').value, amount: amount, base: tax > 0 ? Math.round(sum * 100) / 100 : null, tax: tax > 0 ? tax : null },
+        remainderFn);
       checked.forEach(function (cb) { cb.checked = false; });
       remainderFn();
       toast('Split added: ' + money(amount) + (tax ? ' (incl. ' + money(Math.round(tax * 100) / 100) + ' tax)' : ''));
     };
   }
 
-  // ---------- manual split calculator (the "subtotal + auto-tax" flow) ----------
+  // ---------- split adder: category + amount (+ live-previewed auto tax) ----------
+  function calcPreview(prefix) {
+    var amt = parseFloat($(prefix + 'calc-amt').value);
+    var rate = $(prefix + 'calc-tax').checked ? getRate(prefix) : 0;
+    var el = $(prefix + 'calc-preview');
+    $(prefix + 'calc-rate-label').textContent = getRate(prefix) ? (getRate(prefix) * 100).toFixed(3).replace(/\.?0+$/, '') + '% tax' : 'tax';
+    if (!amt || amt <= 0) { el.hidden = true; return; }
+    el.hidden = false;
+    if (rate) {
+      var tax = Math.round(amt * rate * 100) / 100;
+      var total = Math.round((amt + tax) * 100) / 100;
+      el.innerHTML = money(amt) + ' + ' + money(tax) + ' tax = <b>' + money(total) + '</b>';
+    } else {
+      el.innerHTML = 'Split of <b>' + money(Math.round(amt * 100) / 100) + '</b> (no tax added)';
+    }
+  }
   function setupCalc(prefix, allocContainer, remainderFn) {
+    ['calc-amt', 'taxrate'].forEach(function (id) {
+      $(prefix + id).addEventListener('input', function () { calcPreview(prefix); });
+    });
+    $(prefix + 'calc-tax').addEventListener('change', function () { calcPreview(prefix); });
     $(prefix + 'calc-add').onclick = function () {
       var amt = parseFloat($(prefix + 'calc-amt').value);
-      if (!amt || amt <= 0) { toast('Enter the pre-tax amount first'); return; }
+      if (!amt || amt <= 0) { toast('Enter the amount first'); return; }
       var rate = $(prefix + 'calc-tax').checked ? getRate(prefix) : 0;
-      var final = Math.round(amt * (1 + rate) * 100) / 100;
-      allocRow(allocContainer, { category: $(prefix + 'calc-cat').value, amount: final }, remainderFn);
+      var tax = Math.round(amt * rate * 100) / 100;
+      var final = Math.round((amt + tax) * 100) / 100;
+      allocRow(allocContainer,
+        { category: $(prefix + 'calc-cat').value, amount: final, base: tax > 0 ? amt : null, tax: tax > 0 ? tax : null },
+        remainderFn);
       $(prefix + 'calc-amt').value = '';
+      calcPreview(prefix);
       remainderFn();
-      toast('Split added: ' + money(final) + (rate ? ' (' + money(amt) + ' + ' + money(Math.round((final - amt) * 100) / 100) + ' tax)' : ''));
+      toast('Split added: ' + money(final) + (tax ? ' (' + money(amt) + ' + ' + money(tax) + ' tax)' : ''));
     };
   }
   setupCalc('f-', $('alloc-rows'), function () { updateRemainder($('alloc-rows'), $('f-total'), $('alloc-remainder')); });
@@ -1542,7 +1579,9 @@
       out.push({ category: mainCategory, scheduleC: SC_BY_NAME[mainCategory] || '', amount: rem > 0 ? rem : total });
     }
     splits.forEach(function (a) {
-      out.push({ category: a.category, scheduleC: SC_BY_NAME[a.category] || '', amount: a.amount });
+      var alloc = { category: a.category, scheduleC: SC_BY_NAME[a.category] || '', amount: a.amount };
+      if (a.base != null) { alloc.base = a.base; alloc.tax = a.tax; }
+      out.push(alloc);
     });
     return out;
   }
@@ -1752,8 +1791,11 @@
       var colorCanvas = box ? cropCanvas(work, box) : work;
       var storedCanvas = shrinkCanvas(colorCanvas, 1200); // cropped color copy = the tax record
       var ocrBlob = await canvasToBlob(ocrCanvas, 0.95);
-      var storedBlob = await canvasToBlob(storedCanvas, 0.85);
-      $('preview').src = URL.createObjectURL(storedBlob); // show the user the cropped receipt
+      // Store the image as a data-URL STRING: on iOS, blobs kept in IndexedDB can be
+      // invalidated when other records are deleted (WebKit blob-file cleanup bug);
+      // strings are immune — which is why thumbnails always survived.
+      var storedData = storedCanvas.toDataURL('image/jpeg', 0.85);
+      $('preview').src = storedData; // show the user the cropped receipt
       $('progress-label').textContent = 'Reading text (on-device OCR)…';
       var worker = await getWorker();
       var result = await worker.recognize(ocrBlob);
@@ -1772,7 +1814,7 @@
           parsed.category = recls.name; parsed.scheduleC = recls.scheduleC; parsed.confidence = recls.confidence;
         }
       }
-      pending = { imageBlob: storedBlob, thumb: makeThumb(storedCanvas), ocrText: text, parsed: parsed, editingId: null, createdAt: null };
+      pending = { imageData: storedData, thumb: makeThumb(storedCanvas), ocrText: text, parsed: parsed, editingId: null, createdAt: null };
       fillReview(parsed, text);
       prog.classList.remove('show');
     } catch (err) {
@@ -1811,15 +1853,12 @@
     } else {
       setRateUI('f-', 0, 'not detected — enter your local rate');
     }
+    calcPreview('f-');
     $('review').classList.add('show');
     $('review').scrollIntoView({ behavior: 'smooth' });
   }
 
   function reviewRemainder() { updateRemainder($('alloc-rows'), $('f-total'), $('alloc-remainder')); }
-  $('btn-add-split').addEventListener('click', function () {
-    allocRow($('alloc-rows'), { category: 'Personal (non-deductible)' }, reviewRemainder);
-    reviewRemainder();
-  });
   $('f-total').addEventListener('input', reviewRemainder);
 
   $('btn-discard').addEventListener('click', function () { pending = null; $('review').classList.remove('show'); });
@@ -1839,7 +1878,7 @@
       allocations: buildAllocations(total, catSel.value, $('alloc-rows')),
       confidence: pending.parsed ? pending.parsed.confidence : 'low',
       ocrText: pending.ocrText,
-      imageBlob: pending.imageBlob,
+      imageData: pending.imageData,
       thumb: pending.thumb
     };
     if (pending.editingId != null) { rec.id = pending.editingId; await putReceipt(rec); }
@@ -1895,9 +1934,20 @@
     if (!r) return;
     detailId = id; detailRec = r;
     $('d-title').textContent = r.merchant || 'Receipt';
-    if (detailImgUrl) URL.revokeObjectURL(detailImgUrl);
-    if (r.imageBlob) { detailImgUrl = URL.createObjectURL(r.imageBlob); $('d-img').src = detailImgUrl; $('d-img').style.display = ''; }
-    else { $('d-img').style.display = 'none'; }
+    if (detailImgUrl) { URL.revokeObjectURL(detailImgUrl); detailImgUrl = null; }
+    var img = $('d-img');
+    var hint = img.nextElementSibling;
+    img.onerror = function () {
+      // full image unreadable (legacy blob lost by iOS) — fall back to the thumbnail
+      img.onerror = null;
+      if (r.thumb) { img.src = r.thumb; if (hint) hint.textContent = 'Full image unavailable — showing thumbnail. New scans store images safely.'; }
+      else { img.style.display = 'none'; }
+    };
+    if (hint) hint.textContent = 'Stored copy — serves as your receipt record for tax purposes';
+    if (r.imageData) { img.src = r.imageData; img.style.display = ''; }
+    else if (r.imageBlob) { detailImgUrl = URL.createObjectURL(r.imageBlob); img.src = detailImgUrl; img.style.display = ''; }
+    else if (r.thumb) { img.src = r.thumb; img.style.display = ''; if (hint) hint.textContent = 'Full image unavailable — showing thumbnail.'; }
+    else { img.style.display = 'none'; }
     $('d-merchant').value = r.merchant || '';
     $('d-date').value = r.date || '';
     $('d-total').value = (r.total || 0).toFixed(2);
@@ -1910,7 +1960,7 @@
     var allocs = allocationsOf(r);
     allocs.forEach(function (a, i) {
       if (i === 0 && a.category === r.category) return; // remainder shown implicitly
-      allocRow(rows, a, detailRemainder);
+      allocRow(rows, a, detailRemainder);               // a carries base/tax when tax was auto-added
     });
     detailRemainder();
     // line items (re-derived from the stored OCR text)
@@ -1924,14 +1974,11 @@
     if (dTax.rate) setRateUI('d-', dTax.rate, dTax.printedRate ? 'printed on receipt' : 'derived from receipt');
     else if (dMemRate) setRateUI('d-', dMemRate, dCity ? 'remembered for ' + dCity : 'last used');
     else setRateUI('d-', 0, 'not detected — enter your local rate');
+    calcPreview('d-');
     $('detail').classList.add('show');
     $('detail').scrollTop = 0;
   }
   function detailRemainder() { updateRemainder($('d-alloc-rows'), $('d-total'), $('d-alloc-remainder')); }
-  $('d-add-split').addEventListener('click', function () {
-    allocRow($('d-alloc-rows'), { category: 'Personal (non-deductible)' }, detailRemainder);
-    detailRemainder();
-  });
   $('d-total').addEventListener('input', detailRemainder);
   $('d-close').addEventListener('click', function () { $('detail').classList.remove('show'); });
   $('d-save').addEventListener('click', async function () {
@@ -2074,11 +2121,27 @@
     }).join('\r\n');
   }
   function download(content, name, mime) {
-    var blob = new Blob([content], { type: mime });
-    var a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = name;
-    document.body.appendChild(a); a.click(); a.remove();
+    var blob = content instanceof Blob ? content : new Blob([content], { type: mime });
+    // On iOS, a plain download opens Safari's file previewer (back arrow / X / Safari
+    // icons — not our UI). The native share sheet is the professional path: Save to
+    // Files, AirDrop, Mail, etc. Fall back to a normal download elsewhere.
+    try {
+      var f = new File([blob], name, { type: mime });
+      if (navigator.canShare && navigator.canShare({ files: [f] }) && /iPhone|iPad|Android/i.test(navigator.userAgent)) {
+        navigator.share({ files: [f] }).catch(function (err) {
+          if (err && err.name === 'AbortError') return;   // user closed the sheet
+          fallback();
+        });
+        return;
+      }
+    } catch (e) { /* File ctor or canShare unsupported */ }
+    fallback();
+    function fallback() {
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = name;
+      document.body.appendChild(a); a.click(); a.remove();
+    }
   }
   function xmlEsc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
 
@@ -2158,16 +2221,12 @@
         createdAt: r.createdAt, merchant: r.merchant, date: r.date, total: r.total,
         category: r.category, scheduleC: r.scheduleC, notes: r.notes || '',
         allocations: allocationsOf(r), confidence: r.confidence, ocrText: r.ocrText,
-        thumb: r.thumb, image: r.imageBlob ? await blobToDataURL(r.imageBlob) : null
+        thumb: r.thumb, image: r.imageData || (r.imageBlob ? await blobToDataURL(r.imageBlob).catch(function () { return null; }) : null)
       });
     }
     var payload = { app: 'ReceiptSnap', version: 3, exportedAt: new Date().toISOString(), receipts: out, merchantMemory: memLoad() };
-    var blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
-    var a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'receiptsnap-backup-' + new Date().toISOString().slice(0, 10) + '.json';
-    document.body.appendChild(a); a.click(); a.remove();
-    toast('Backup saved ✓ (' + rs.length + ' receipts)');
+    download(JSON.stringify(payload), 'receiptsnap-backup-' + new Date().toISOString().slice(0, 10) + '.json', 'application/json');
+    toast('Backup ready ✓ (' + rs.length + ' receipts) — save it to Files/iCloud');
   });
   $('btn-restore').addEventListener('click', function () { $('restore-input').click(); });
   $('restore-input').addEventListener('change', async function (e) {
@@ -2193,7 +2252,7 @@
           createdAt: b.createdAt, merchant: b.merchant, date: b.date, total: b.total,
           category: b.category, scheduleC: b.scheduleC, notes: b.notes || '',
           allocations: b.allocations, confidence: b.confidence, ocrText: b.ocrText,
-          thumb: b.thumb, imageBlob: b.image ? dataURLToBlob(b.image) : null
+          thumb: b.thumb, imageData: b.image || null
         });
         added++;
       }
@@ -2206,7 +2265,21 @@
   });
 
   // ---------- boot ----------
-  openDB().catch(function (e) { toast('Storage unavailable: ' + e); });
+  openDB().then(async function () {
+    // one-time migration: legacy blob images -> iOS-safe data-URL strings
+    try {
+      var rs = await allReceipts();
+      for (var i = 0; i < rs.length; i++) {
+        var r = rs[i];
+        if (r.imageBlob && !r.imageData) {
+          try { r.imageData = await blobToDataURL(r.imageBlob); }
+          catch (e) { r.imageData = null; }   // blob already lost — thumb remains
+          delete r.imageBlob;
+          await putReceipt(r);
+        }
+      }
+    } catch (e) { console.warn('migration skipped', e); }
+  }).catch(function (e) { toast('Storage unavailable: ' + e); });
 })();
 </script>
 </body>
