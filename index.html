@@ -138,7 +138,15 @@
     -webkit-appearance: none; appearance: none; font-family: inherit; transition: border-color .15s, box-shadow .15s;
   }
   textarea { height: auto; min-height: 68px; line-height: 1.45; resize: vertical; }
+  /* Checkboxes must keep their NATIVE appearance — the global appearance:none
+     above renders them as empty shells that never show their checked state. */
+  input[type=checkbox] {
+    -webkit-appearance: checkbox; appearance: auto;
+    width: 18px; height: 18px; padding: 0; border: 0; border-radius: 4px;
+    accent-color: var(--accent); background: transparent; flex: none;
+  }
   input:focus, select:focus, textarea:focus { outline: 0; border-color: var(--accent-line); box-shadow: 0 0 0 3px var(--accent-soft); }
+  input[type=checkbox]:focus { box-shadow: none; }
   select {
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238a97ab' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
     background-repeat: no-repeat; background-position: right 13px center; background-size: 18px; padding-right: 40px;
@@ -313,7 +321,7 @@
         <div><label>Date</label><input id="f-date" type="date"></div>
         <div><label>Total ($)</label><input id="f-total" type="number" step="0.01" inputmode="decimal" placeholder="0.00"></div>
       </div>
-      <label>Tax category</label>
+      <label>Main tax category</label>
       <select id="f-category"></select>
       <div class="sc" id="f-schedc" style="font-size:12px;color:var(--muted);margin-top:6px;"></div>
 
@@ -386,8 +394,8 @@
     <div id="cat-breakdown"></div>
     <div class="section-label">Export for taxes</div>
     <select id="export-format" style="margin-top:4px">
+      <option value="excel" selected>Excel workbook — tabbed (.xlsx)</option>
       <option value="cpa">CPA packet — CSV (works everywhere)</option>
-      <option value="excel">Excel workbook — tabbed (.xlsx)</option>
       <option value="txf">TurboTax / H&amp;R Block / TaxAct (.txf)</option>
       <option value="qbo">QuickBooks Online — bank CSV</option>
       <option value="sheets">Google Sheets / LibreOffice — CSV</option>
@@ -439,7 +447,7 @@
       <div><label>Date</label><input id="d-date" type="date"></div>
       <div><label>Total ($)</label><input id="d-total" type="number" step="0.01" inputmode="decimal"></div>
     </div>
-    <label>Tax category</label>
+    <label>Main tax category</label>
     <select id="d-category"></select>
     <div class="sc" id="d-schedc" style="font-size:12px;color:var(--muted);margin-top:6px;"></div>
     <div id="d-items-section" hidden>
@@ -1212,6 +1220,42 @@
       tr.getCell(4).numFmt = CUR;
       s.addRow([]);
     });
+    // --- Visual Summary sheet: %-of-group with in-cell data bars ---
+    // (Native embedded pie charts can't be generated in-browser; Excel data bars
+    // are a native feature and render as a bar chart inside the cells. Columns
+    // A:B are pre-arranged so "Insert → Pie chart" works in one step.)
+    var v = wb.addWorksheet('Visual Summary');
+    v.columns = [{ width: 34 }, { width: 14 }, { width: 11 }, { width: 44 }];
+    var vHdr = v.addRow(['Category', 'Total', '% of group', 'Spending bar']);
+    styleHeader(vHdr);
+    var vRanges = [];
+    forms.forEach(function (form) {
+      var cats = Object.keys(byCat).filter(function (k) { return byCat[k].form === form; })
+        .sort(function (a, b) { return byCat[b].sum - byCat[a].sum; });
+      if (!cats.length) return;
+      var groupTotal = cats.reduce(function (t, k) { return t + byCat[k].sum; }, 0) || 1;
+      var fr2 = v.addRow([form.toUpperCase()]);
+      fr2.font = { bold: true, color: { argb: 'FF4F7CFF' } };
+      var startRow = v.rowCount + 1;
+      cats.forEach(function (k) {
+        var row = v.addRow([k, byCat[k].sum, byCat[k].sum / groupTotal, byCat[k].sum]);
+        row.getCell(2).numFmt = CUR;
+        row.getCell(3).numFmt = '0.0%';
+        row.getCell(4).numFmt = ';;;';       // hide the number — show only the data bar
+      });
+      vRanges.push('D' + startRow + ':D' + v.rowCount);
+      v.addRow([]);
+    });
+    vRanges.forEach(function (ref) {
+      v.addConditionalFormatting({
+        ref: ref,
+        rules: [{ type: 'dataBar', minLength: 0, maxLength: 100,
+          cfvo: [{ type: 'min' }, { type: 'max' }], color: { argb: 'FF4F7CFF' }, gradient: false }]
+      });
+    });
+    v.addRow(['Want a pie chart? Select a group\'s rows in columns A:B, then Insert → Chart → Pie.'])
+      .font = { color: { argb: 'FF8A97AB' } };
+
     s.addRow(['HOW TO USE THIS SHEET']).font = { bold: true };
     [
       'CPA: the Schedule C section above maps 1:1 to Schedule C expense lines.',
@@ -1239,6 +1283,9 @@
         var row = ws.addRow(vals);
         row.getCell(3).numFmt = CUR;
       });
+      // Filter/sort dropdowns on the header row, out of the box
+      ws.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: hdr.length } };
+      ws.views = [{ state: 'frozen', ySplit: 1 }];   // keep header visible when scrolling
       return ws;
     }
     var schedC = sorted.filter(function (r) { return C.taxFormOf(r.category) === 'Schedule C'; });
@@ -1996,7 +2043,7 @@
   // ---------- Export Center ----------
   var EXPORT_HINTS = {
     cpa: 'One clean table, one row per allocation: date, merchant, amount, category, Schedule C line, business flag, notes. Business rows first — hand it straight to your CPA.',
-    excel: 'A tabbed workbook: Summary (totals by category, Schedule C vs personal separated), Business Transactions, Personal & Other. Opens in Excel and LibreOffice — Excel may show a one-time "verify format" prompt, choose Yes.',
+    excel: 'A tabbed .xlsx: Summary by IRS form, a Visual Summary with in-cell bar charts, and filterable Schedule C + Other transaction tabs. Opens clean in Excel, LibreOffice, and Google Sheets.',
     txf: 'Tax Exchange Format with official Schedule C codes — TurboTax Desktop, H&R Block, and TaxAct import it directly (File → Import). Exports business expense totals per Schedule C line for the selected year. COGS, depreciation, and personal items are excluded (those need direct entry).',
     qbo: 'QuickBooks Online bank-upload format (Date, Description, Amount as money out). In QBO: Transactions → Banking → Upload from file.',
     sheets: 'Same CPA table as CSV — Google Sheets: File → Import → Upload. LibreOffice Calc opens it directly (or use the Excel workbook option for tabs).'
