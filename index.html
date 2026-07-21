@@ -164,6 +164,22 @@
   details.ocr { margin-top: 16px; }
   details.ocr summary { color: var(--muted); font-size: 12.5px; cursor: pointer; }
   details.ocr pre { white-space: pre-wrap; font-size: 11px; color: var(--muted); background: var(--bg-2); border: 1px solid var(--line); padding: 10px; border-radius: 10px; max-height: 180px; overflow: auto; margin-top: 8px; }
+  .ocr-wrap { position: relative; }
+  .ocr-wrap pre { margin-top: 8px; padding-top: 30px; }
+  .ocr-copy {
+    position: absolute; top: 14px; right: 8px; z-index: 2;
+    background: var(--card-2); border: 1px solid var(--line); color: var(--text);
+    font-size: 11px; font-weight: 600; padding: 5px 10px; border-radius: 8px; cursor: pointer;
+  }
+  .ocr-copy:active { transform: translateY(1px); }
+  /* secret long-press diagnostic button over the merchant title */
+  .detail-top { position: relative; }
+  .diag-secret {
+    position: absolute; left: -6px; top: -6px; height: 44px; width: 62%;
+    background: transparent; border: 0; padding: 0; margin: 0; z-index: 3;
+    -webkit-touch-callout: none; -webkit-user-select: none; user-select: none; cursor: default;
+  }
+  .diag-secret.armed { background: color-mix(in srgb, var(--accent) 12%, transparent); border-radius: 10px; }
 
   /* Receipts list */
   .receipt-card {
@@ -405,7 +421,7 @@
       <label>Notes</label>
       <textarea id="f-notes" placeholder="e.g. Materials for the Nakamura job; lunch with supplier"></textarea>
 
-      <details class="ocr"><summary>Show raw scanned text</summary><pre id="ocr-text"></pre></details>
+      <details class="ocr"><summary>Show raw scanned text</summary><div class="ocr-wrap"><button class="ocr-copy" data-target="ocr-text" type="button">Copy</button><pre id="ocr-text"></pre></div></details>
       <div class="btns">
         <button class="ghost" id="btn-discard">Discard</button>
         <button class="primary" id="btn-save">Save Receipt</button>
@@ -481,6 +497,7 @@
 <div class="detail-overlay" id="detail">
   <div class="detail-card">
     <div class="detail-top">
+      <button class="diag-secret" id="d-diag" type="button" aria-label="Copy diagnostic (long-press)"></button>
       <h3 id="d-title">Receipt</h3>
       <button class="detail-close" id="d-close">✕</button>
     </div>
@@ -533,7 +550,7 @@
     </div><!-- /d-splits-body -->
     <label>Notes</label>
     <textarea id="d-notes"></textarea>
-    <details class="ocr"><summary>Show raw scanned text</summary><pre id="d-ocr"></pre></details>
+    <details class="ocr"><summary>Show raw scanned text</summary><div class="ocr-wrap"><button class="ocr-copy" data-target="d-ocr" type="button">Copy</button><pre id="d-ocr"></pre></div></details>
     <div class="btns">
       <button class="danger" id="d-delete">Delete</button>
       <button class="primary" id="d-save">Save Changes</button>
@@ -2250,6 +2267,88 @@
   $('d-img').addEventListener('click', function () {
     if (this.src && this.style.display !== 'none') window.__openReceiptViewer(this.src);
   });
+
+  // ---------- copy buttons on raw-text fields ----------
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest('.ocr-copy');
+    if (!b) return;
+    var pre = $(b.dataset.target);
+    if (!pre) return;
+    var txt = pre.textContent || '';
+    (navigator.clipboard ? navigator.clipboard.writeText(txt) : Promise.reject()).then(function () {
+      b.textContent = 'Copied ✓'; toast('Raw text copied ✓');
+      setTimeout(function () { b.textContent = 'Copy'; }, 1500);
+    }).catch(function () { toast('Copy failed — long-press the text to select it'); });
+  });
+
+  // ---------- secret long-press: full receipt diagnostic for Claude ----------
+  function fmtRate(rate) { return (rate * 100).toFixed(3).replace(/\.?0+$/, '') + '%'; }
+  function buildDiagnostic(r) {
+    var L = [];
+    L.push('=== ReceiptSnap receipt diagnostic ===');
+    L.push('Merchant: ' + (r.merchant || '(none)'));
+    L.push('Date: ' + (r.date || '(none)'));
+    L.push('Total: ' + money(r.total || 0));
+    if (r.salesTax != null) L.push('Sales tax: ' + money(r.salesTax));
+    if (r.taxRate) L.push('Tax rate: ' + fmtRate(r.taxRate));
+    L.push('Main category: ' + (r.category || '(none)') + (SC_BY_NAME[r.category] ? ' [' + SC_BY_NAME[r.category] + ']' : ''));
+    L.push('OCR confidence: ' + (r.confidence || 'n/a'));
+    var allocs = allocationsOf(r);
+    if (allocs.length > 1) {
+      L.push('Splits:');
+      allocs.forEach(function (a) {
+        L.push('  - ' + a.category + ': ' + money(a.amount) +
+          (a.tax ? ' (' + money(a.base) + ' + ' + money(a.tax) + ' tax)' : ''));
+      });
+    }
+    if (r.notes) L.push('Notes: ' + r.notes);
+    L.push('');
+    L.push('--- RAW SCANNED TEXT ---');
+    L.push(r.ocrText || '(none captured)');
+    return L.join('\n');
+  }
+  async function copyDiagnostic(r) {
+    var text = buildDiagnostic(r);
+    // Always place the text on the clipboard — reliable paste into Claude chat.
+    try { await navigator.clipboard.writeText(text); } catch (e) {}
+    // Also try to share the PHOTO + text as one unit (best on iOS).
+    try {
+      if (r.imageData && navigator.canShare) {
+        var blob = dataURLToBlob(r.imageData);
+        var file = new File([blob], 'receipt.jpg', { type: blob.type || 'image/jpeg' });
+        if (navigator.canShare({ files: [file] })) {
+          await navigator.share({ files: [file], text: text, title: 'ReceiptSnap diagnostic' });
+          toast('Shared ✓ photo + details');
+          return;
+        }
+      }
+    } catch (e) {
+      if (e && e.name === 'AbortError') { toast('Diagnostic copied ✓ (share cancelled)'); return; }
+    }
+    toast('Diagnostic copied ✓ — paste into Claude (add the photo separately)');
+  }
+  (function () {
+    var btn = $('d-diag'), timer = null, fired = false;
+    function start() {
+      fired = false; clearTimeout(timer);
+      btn.classList.add('armed');
+      timer = setTimeout(function () {
+        fired = true; btn.classList.remove('armed');
+        if (navigator.vibrate) { try { navigator.vibrate(30); } catch (e) {} }
+        if (detailRec) copyDiagnostic(detailRec);
+      }, 1000);
+    }
+    function cancel() { clearTimeout(timer); btn.classList.remove('armed'); }
+    btn.addEventListener('touchstart', function () { start(); }, { passive: true });
+    btn.addEventListener('touchend', function (e) { if (fired) e.preventDefault(); cancel(); });
+    btn.addEventListener('touchmove', cancel, { passive: true });
+    btn.addEventListener('touchcancel', cancel);
+    btn.addEventListener('mousedown', start);
+    btn.addEventListener('mouseup', cancel);
+    btn.addEventListener('mouseleave', cancel);
+    btn.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+    window.__copyDiagnostic = function () { if (detailRec) return copyDiagnostic(detailRec); };
+  })();
   $('d-save').addEventListener('click', async function () {
     if (!detailRec) return;
     var r = detailRec;
