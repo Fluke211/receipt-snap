@@ -123,6 +123,19 @@
   .bar > div { height: 100%; width: 0%; background: linear-gradient(90deg, var(--accent), color-mix(in srgb, var(--accent) 60%, white)); transition: width .2s; }
   .preview-img { width: 100%; border-radius: 12px; margin-bottom: 12px; max-height: 300px; object-fit: contain; background: rgba(0,0,0,.3); }
 
+  /* Capture flow states: once a photo is snapped, it replaces the "take a photo"
+     controls and stays pinned at the top; scanning again is only offered after
+     the user Saves or Discards (which clears these classes). */
+  #view-capture.busy .hero,
+  #view-capture.busy .capture-actions { display: none; }
+  #view-capture.reviewing .progress-label,
+  #view-capture.reviewing .bar { display: none; }
+  #view-capture.reviewing .progress-wrap {
+    position: sticky; top: 8px; z-index: 5; padding: 8px;
+    margin-bottom: 4px; box-shadow: 0 10px 20px -14px rgba(0,0,0,.7);
+  }
+  #view-capture.reviewing .preview-img { max-height: 168px; margin-bottom: 0; }
+
   /* Review form */
   .review { margin-top: 16px; background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; display: none; }
   .review.show { display: block; }
@@ -772,17 +785,26 @@
     }
   ];
 
-  var MONEY = /\$?\s*([0-9]{1,3}(?:[.,][0-9]{3})*[.,][0-9]{2})(?!\d)/;
+  // Cents separator tolerates OCR misreads of the decimal point: a small "." next to
+  // digits is frequently scanned as { } [ ] | (e.g. "$172.37" → "$172{37"). We accept
+  // those variants for the LAST separator only (thousands stay strict [.,]) and normalize
+  // them back to "." in normalizeAmount, so the real total isn't lost to a garbled dot.
+  var MONEY = /\$?\s*([0-9]{1,3}(?:[.,][0-9]{3})*[.,{}\[\]|][0-9]{2})(?!\d)/;
   var TOTAL_HINTS = [
     /(?:grand\s*total|total\s*due|amount\s*due|balance\s*due|total\s*payment|payment\s*due|total\s*sale|purchase\s*total|to\s*pay|amount\s*charged)/i,
     /(?:^|\s)total(?!\s*(?:items?|qty|savings|discount|tax))/i,
     /amount(?:\s*charged|\s*paid)?/i,
     /balance/i
   ];
-  var NOT_TOTAL = /(sub\s*-?\s*total|subtotal|tax|tip|gratuity|change|cash\s*back|savings|instant|discount|items?\s*(count|sold)|number|\bnum\b|\bsold\b|count|auth|account|member|points|balance\s*fwd)/i;
+  // "FSA" = Flexible/Health Spending Account footer lines on warehouse receipts
+  // (FSA N/TAX AMT, FSA TAX, FSA TOTAL). These are NOT the grand total or sales tax —
+  // they must never win, or a "$16.99" FSA line gets picked as the whole purchase.
+  var NOT_TOTAL = /(sub\s*-?\s*total|subtotal|\bfsa\b|tax|tip|gratuity|change|cash\s*back|savings|instant|discount|items?\s*(count|sold)|number|\bnum\b|\bsold\b|count|auth|account|member|points|balance\s*fwd)/i;
 
   function normalizeAmount(s) {
     s = s.replace(/\s/g, '');
+    // OCR misreads the decimal point as a bracket/brace/pipe — restore it to "."
+    s = s.replace(/[{}\[\]|]/g, '.');
     // Handle European "1.234,56" vs US "1,234.56"
     if (/,\d{2}$/.test(s)) { s = s.replace(/\./g, '').replace(',', '.'); }
     else { s = s.replace(/,/g, ''); }
@@ -963,7 +985,7 @@
   }
 
   // ---- Line items & tax ----
-  var NOT_ITEM = /(sub\s*-?\s*total|subtotal|total|tax|\bget\b|\bhst\b|\bgst\b|tip|gratuity|change|cash|visa|master|amex|discover|debit|credit|card|balance|amount|approved|auth|member|account|savings|instant|items?\s+sold|number|payment|tender|refund|due|purchase|transaction|trm|trn|whse|op\s*[#:$]|reg(ister)?\s*#|invoice|receipt)/i;
+  var NOT_ITEM = /(sub\s*-?\s*total|subtotal|total|\bfsa\b|tax|\bget\b|\bhst\b|\bgst\b|tip|gratuity|change|cash|visa|master|amex|discover|debit|credit|card|balance|amount|approved|auth|member|account|savings|instant|items?\s+sold|number|payment|tender|refund|due|purchase|transaction|trm|trn|whse|op\s*[#:$]|reg(ister)?\s*#|invoice|receipt)/i;
   var ITEM_LINE = /^(.{2,48}?)\s+\$?([0-9]{1,4}[.,][0-9]{2})\s*(-)?\s*[A-Za-z]{0,2}[*#]?\s*$/;
   var AMOUNT_ONLY = /^\$?([0-9]{1,4}[.,][0-9]{2})\s*(-)?\s*[A-Za-z]{0,2}[*#]?\s*$/;
 
@@ -1042,7 +1064,8 @@
       }
       if (v === null || v < 0) continue;
       if (/sub\s*-?\s*total|subtotal/i.test(line) && subtotal === null) subtotal = v;
-      else if (/(total\s*tax|sales\s*tax|\btax\b|\bget\b|\bgst\b|\bhst\b|\bvat\b)/i.test(line) && !/taxable/i.test(line)) {
+      else if (/(total\s*tax|sales\s*tax|\btax\b|\bget\b|\bgst\b|\bhst\b|\bvat\b)/i.test(line) &&
+               !/taxable/i.test(line) && !/\bfsa\b/i.test(line)) {   // FSA N/TAX AMT is not sales tax
         if (tax === null || v > tax) tax = v;      // "TOTAL TAX" usually prints last/largest
       }
     }
@@ -1910,6 +1933,10 @@
   async function getWorker() {
     if (_worker) return _worker;
     var w = await Tesseract.createWorker('eng', 1, {
+        workerPath: 'vendor/worker.min.js',
+        corePath: 'vendor',
+        langPath: 'vendor/lang',
+        gzip: true,
       logger: ocrProgress
     });
     await w.setParameters({ tessedit_pageseg_mode: '4', preserve_interword_spaces: '1' });
@@ -1917,8 +1944,20 @@
     return _worker;
   }
 
+  // Return the capture view to its idle state: the "Scan a receipt" controls are
+  // shown again and any snapped photo / review form is cleared away.
+  function resetCaptureUI() {
+    $('progress').classList.remove('show');
+    $('review').classList.remove('show');
+    $('view-capture').classList.remove('busy', 'reviewing');
+    $('bar-fill').style.width = '0%';
+  }
+
   async function processImage(file) {
     $('review').classList.remove('show');
+    var vc = $('view-capture');
+    vc.classList.add('busy');          // hide the "take a photo" controls while we work
+    vc.classList.remove('reviewing');
     var prog = $('progress'); prog.classList.add('show');
     $('bar-fill').style.width = '3%';
     $('progress-label').textContent = 'Enhancing image…';
@@ -1955,9 +1994,11 @@
       }
       pending = { imageData: storedData, thumb: makeThumb(storedCanvas), ocrText: text, parsed: parsed, editingId: null, createdAt: null };
       fillReview(parsed, text);
-      prog.classList.remove('show');
+      // Keep the snapped photo pinned above the review form (progress stays shown,
+      // but 'reviewing' hides the progress bar/label and the scan controls).
+      vc.classList.add('reviewing');
     } catch (err) {
-      prog.classList.remove('show');
+      resetCaptureUI();
       toast('Could not read that photo — try again');
       console.error(err);
     }
@@ -2005,7 +2046,9 @@
     }
     calcPreview('f-');
     $('review').classList.add('show');
-    $('review').scrollIntoView({ behavior: 'smooth' });
+    // Bring the pinned photo (top of the capture view) into view, with the review
+    // form right beneath it — rather than scrolling the photo off-screen.
+    $('progress').scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   function reviewRemainder() { updateRemainder($('alloc-rows'), $('f-total'), $('alloc-remainder')); }
@@ -2043,7 +2086,7 @@
   wireSalesTaxDerivation('f-salestax', 'f-total', 'f-');
   wireSalesTaxDerivation('d-salestax', 'd-total', 'd-');
 
-  $('btn-discard').addEventListener('click', function () { pending = null; $('review').classList.remove('show'); });
+  $('btn-discard').addEventListener('click', function () { pending = null; resetCaptureUI(); });
 
   $('btn-save').addEventListener('click', async function () {
     if (!pending) return;
@@ -2070,7 +2113,7 @@
     var learned = memLearn(rec.ocrText, rec.merchant);   // learn this store's name for next time
     taxMemLearn(C.extractCity((rec.ocrText || '').split('\n')), getRate('f-'));
     pending = null;
-    $('review').classList.remove('show');
+    resetCaptureUI();
     toast(learned
       ? 'Saved ✓ — I\'ll remember this store as "' + rec.merchant + '"'
       : 'Saved ✓ ' + rec.merchant + ' — ' + money(rec.total));
