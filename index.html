@@ -272,7 +272,37 @@
   .detail-top h3 { margin: 0; font-size: 16px; font-weight: 650; }
   .detail-close { background: var(--card-2); border: 1px solid var(--line); color: var(--text); width: 34px; height: 34px; border-radius: 10px; font-size: 16px; cursor: pointer; }
   .detail-img { width: 100%; border-radius: 12px; background: rgba(0,0,0,.3); max-height: 380px; object-fit: contain; margin-bottom: 6px; }
+  .detail-img { cursor: zoom-in; }
   .detail-img-hint { font-size: 11px; color: var(--muted-2); text-align: center; margin-bottom: 8px; }
+
+  /* Fullscreen pinch-zoom / pan receipt viewer */
+  .imgview {
+    position: fixed; inset: 0; z-index: 40; display: none; overflow: hidden;
+    background: rgba(4,7,13,.97); touch-action: none; -webkit-user-select: none; user-select: none;
+  }
+  .imgview.show { display: block; }
+  .imgview img {
+    position: absolute; top: 0; left: 0; transform-origin: 0 0; will-change: transform;
+    -webkit-user-drag: none; pointer-events: none;
+  }
+  .imgview .iv-close {
+    position: fixed; top: calc(10px + env(safe-area-inset-top)); right: 14px; z-index: 42;
+    width: 40px; height: 40px; border-radius: 12px; background: rgba(20,27,38,.85);
+    border: 1px solid var(--line); color: var(--text); font-size: 18px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .imgview .iv-reset {
+    position: fixed; top: calc(10px + env(safe-area-inset-top)); left: 14px; z-index: 42;
+    height: 40px; padding: 0 14px; border-radius: 12px; background: rgba(20,27,38,.85);
+    border: 1px solid var(--line); color: var(--text); font-size: 13px; font-weight: 600; cursor: pointer;
+    display: none; align-items: center; gap: 6px;
+  }
+  .imgview.zoomed .iv-reset { display: flex; }
+  .imgview .iv-hint {
+    position: fixed; bottom: calc(18px + env(safe-area-inset-bottom)); left: 0; right: 0;
+    text-align: center; color: var(--muted); font-size: 12px; pointer-events: none;
+    transition: opacity .3s;
+  }
 
   .toast {
     position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(98px + env(safe-area-inset-bottom));
@@ -455,7 +485,7 @@
       <button class="detail-close" id="d-close">✕</button>
     </div>
     <img class="detail-img" id="d-img" alt="Receipt photo">
-    <div class="detail-img-hint">Stored copy — serves as your receipt record for tax purposes</div>
+    <div class="detail-img-hint">Stored copy — tap to zoom · your receipt record for tax purposes</div>
     <label>Merchant</label>
     <input id="d-merchant">
     <div class="row3">
@@ -522,6 +552,14 @@
     <span class="i"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg></span>Summary
   </button>
 </nav>
+
+<!-- Fullscreen receipt viewer -->
+<div class="imgview" id="imgview">
+  <img id="iv-img" alt="Receipt (pinch to zoom)">
+  <button class="iv-reset" id="iv-reset">⤢ Fit</button>
+  <button class="iv-close" id="iv-close">✕</button>
+  <div class="iv-hint" id="iv-hint">Pinch or double-tap to zoom · drag to pan</div>
+</div>
 
 <div class="toast" id="toast"></div>
 
@@ -2072,7 +2110,7 @@
       if (r.thumb) { img.src = r.thumb; if (hint) hint.textContent = 'Full image unavailable — showing thumbnail. New scans store images safely.'; }
       else { img.style.display = 'none'; }
     };
-    if (hint) hint.textContent = 'Stored copy — serves as your receipt record for tax purposes';
+    if (hint) hint.textContent = 'Stored copy — tap to zoom · your receipt record for tax purposes';
     if (r.imageData) { img.src = r.imageData; img.style.display = ''; }
     else if (r.imageBlob) { detailImgUrl = URL.createObjectURL(r.imageBlob); img.src = detailImgUrl; img.style.display = ''; }
     else if (r.thumb) { img.src = r.thumb; img.style.display = ''; if (hint) hint.textContent = 'Full image unavailable — showing thumbnail.'; }
@@ -2116,6 +2154,102 @@
   function detailRemainder() { updateRemainder($('d-alloc-rows'), $('d-total'), $('d-alloc-remainder')); }
   $('d-total').addEventListener('input', detailRemainder);
   $('d-close').addEventListener('click', function () { $('detail').classList.remove('show'); });
+
+  // ---------- fullscreen pinch-zoom / pan receipt viewer ----------
+  (function () {
+    var vp = $('imgview'), img = $('iv-img');
+    var s = 1, tx = 0, ty = 0, baseW = 0, baseH = 0, vw = 0, vh = 0;
+    var pinch = null, pan = null, lastTap = 0, hintTimer = null;
+    var MAX = 6;
+
+    function apply() {
+      img.style.transform = 'translate(' + tx + 'px,' + ty + 'px) scale(' + s + ')';
+      vp.classList.toggle('zoomed', s > 1.01);
+      window.__ivState = { s: s, tx: tx, ty: ty, baseW: baseW, baseH: baseH };
+    }
+    function clampT() {
+      var dW = baseW * s, dH = baseH * s;
+      tx = dW <= vw ? (vw - dW) / 2 : Math.min(0, Math.max(vw - dW, tx));
+      ty = dH <= vh ? (vh - dH) / 2 : Math.min(0, Math.max(vh - dH, ty));
+    }
+    function zoomAbout(ns, px, py) {
+      ns = Math.max(1, Math.min(MAX, ns));
+      var k = ns / s;
+      tx = px - k * (px - tx);
+      ty = py - k * (py - ty);
+      s = ns; clampT(); apply();
+    }
+    function fit() { s = 1; clampT(); apply(); }
+    function dist(a, b) { var dx = a.clientX - b.clientX, dy = a.clientY - b.clientY; return Math.sqrt(dx * dx + dy * dy); }
+
+    function open(src) {
+      var probe = new Image();
+      probe.onload = function () {
+        vw = window.innerWidth; vh = window.innerHeight;
+        var f = Math.min(vw / probe.naturalWidth, vh / probe.naturalHeight, 1) * 0.98;
+        baseW = probe.naturalWidth * f; baseH = probe.naturalHeight * f;
+        img.style.width = baseW + 'px'; img.style.height = baseH + 'px';
+        s = 1; tx = (vw - baseW) / 2; ty = (vh - baseH) / 2; apply();
+      };
+      probe.src = src; img.src = src;
+      vp.classList.add('show');
+      $('iv-hint').style.opacity = '1';
+      clearTimeout(hintTimer);
+      hintTimer = setTimeout(function () { $('iv-hint').style.opacity = '0'; }, 2600);
+    }
+    function close() { vp.classList.remove('show'); }
+    window.__openReceiptViewer = open;
+    $('iv-close').addEventListener('click', close);
+    $('iv-reset').addEventListener('click', fit);
+
+    // touch: pinch + pan + double-tap
+    vp.addEventListener('touchstart', function (e) {
+      if (e.touches.length === 2) {
+        var a = e.touches[0], b = e.touches[1];
+        pinch = { d: dist(a, b), s0: s, mx: (a.clientX + b.clientX) / 2, my: (a.clientY + b.clientY) / 2 };
+        pan = null;
+      } else if (e.touches.length === 1) {
+        var t = e.touches[0];
+        pan = { x: t.clientX, y: t.clientY, tx: tx, ty: ty };
+        var now = Date.now();
+        if (now - lastTap < 300) { zoomAbout(s > 1.2 ? 1 : 2.5, t.clientX, t.clientY); pan = null; }
+        lastTap = now;
+      }
+    }, { passive: false });
+    vp.addEventListener('touchmove', function (e) {
+      e.preventDefault();
+      if (pinch && e.touches.length === 2) {
+        var a = e.touches[0], b = e.touches[1];
+        zoomAbout(pinch.s0 * (dist(a, b) / pinch.d), pinch.mx, pinch.my);
+      } else if (pan && e.touches.length === 1 && s > 1) {
+        var t = e.touches[0];
+        tx = pan.tx + (t.clientX - pan.x); ty = pan.ty + (t.clientY - pan.y);
+        clampT(); apply();
+      }
+    }, { passive: false });
+    vp.addEventListener('touchend', function (e) {
+      if (!e.touches.length) { pinch = null; pan = null; }
+      else if (e.touches.length === 1) { pinch = null; var t = e.touches[0]; pan = { x: t.clientX, y: t.clientY, tx: tx, ty: ty }; }
+    });
+
+    // mouse / trackpad (desktop + test): drag to pan, wheel to zoom, dbl-click toggles
+    var md = null;
+    vp.addEventListener('mousedown', function (e) {
+      if (e.target === $('iv-close') || e.target === $('iv-reset')) return;
+      md = { x: e.clientX, y: e.clientY, tx: tx, ty: ty };
+    });
+    window.addEventListener('mousemove', function (e) {
+      if (!md || s <= 1) return;
+      tx = md.tx + (e.clientX - md.x); ty = md.ty + (e.clientY - md.y); clampT(); apply();
+    });
+    window.addEventListener('mouseup', function () { md = null; });
+    vp.addEventListener('dblclick', function (e) { zoomAbout(s > 1.2 ? 1 : 2.5, e.clientX, e.clientY); });
+    vp.addEventListener('wheel', function (e) { e.preventDefault(); zoomAbout(s * (e.deltaY < 0 ? 1.15 : 0.87), e.clientX, e.clientY); }, { passive: false });
+  })();
+
+  $('d-img').addEventListener('click', function () {
+    if (this.src && this.style.display !== 'none') window.__openReceiptViewer(this.src);
+  });
   $('d-save').addEventListener('click', async function () {
     if (!detailRec) return;
     var r = detailRec;
