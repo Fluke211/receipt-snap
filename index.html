@@ -97,6 +97,7 @@
   }
   .privacy svg { width: 18px; height: 18px; color: var(--accent); flex: none; margin-top: 1px; }
   .privacy b { color: var(--text); font-weight: 600; }
+  .version { text-align: center; color: var(--muted-2); font-size: 11px; margin-top: 14px; letter-spacing: .02em; }
 
   /* Buttons */
   button.primary, button.ghost, button.danger {
@@ -446,6 +447,7 @@
       <span><b>Your data never leaves this device.</b> OCR runs locally in your browser and receipts are
       stored on-device only — no upload, no account, no fees. Use Export on the Summary tab to back up a CSV for your accountant.</span>
     </div>
+    <div class="version" id="app-version"></div>
   </section>
 
   <!-- RECEIPTS -->
@@ -1445,6 +1447,10 @@
 (function () {
   'use strict';
   var C = window.ReceiptClassifier;
+  // Single source of truth for the version stamp (shown on the home screen and
+  // folded into the diagnostic bundle). Bump both on every release.
+  var APP_VERSION = '5.5';
+  var APP_BUILT = '2026-07-23';
 
   // ---------- IndexedDB ----------
   var DB_NAME = 'receiptsnap', DB_VER = 1, db = null;
@@ -1469,6 +1475,10 @@
 
   // ---------- helpers ----------
   var $ = function (id) { return document.getElementById(id); };
+  (function stampVersion() {
+    var el = $('app-version');
+    if (el) el.textContent = 'ReceiptSnap v' + APP_VERSION + ' · ' + APP_BUILT;
+  })();
   function toast(msg) { var t = $('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(function(){t.classList.remove('show');}, 2200); }
   function money(v) { return '$' + (v || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
   function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; }
@@ -2328,7 +2338,7 @@
   function fmtRate(rate) { return (rate * 100).toFixed(3).replace(/\.?0+$/, '') + '%'; }
   function buildDiagnostic(r) {
     var L = [];
-    L.push('=== ReceiptSnap receipt diagnostic ===');
+    L.push('=== ReceiptSnap receipt diagnostic (v' + APP_VERSION + ') ===');
     L.push('Merchant: ' + (r.merchant || '(none)'));
     L.push('Date: ' + (r.date || '(none)'));
     L.push('Total: ' + money(r.total || 0));
