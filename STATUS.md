@@ -2,6 +2,12 @@
 
 **Last updated:** 2026-09-06 · Update this file at the end of every working session.
 
+**Launch checklist: [issue #110](https://github.com/Fluke211/TaxTrail/issues/110).**
+That is the live list of what stands between here and the App Store, kept
+current as things land. It is an issue rather than a file so Tyler can tick a
+box from his phone and so checking one off does not need a pull request. This
+file still holds the situation; #110 holds the remaining work.
+
 | Artifact | Version | State |
 |---|---|---|
 | PWA (`index.html`) | **v5.5** | **RETIRED** (D-021) — proof of concept. Do not modify: Tyler's unexported receipts live in its browser storage. |

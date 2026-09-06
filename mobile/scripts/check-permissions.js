@@ -91,6 +91,27 @@ const PERMISSION_PLUGINS = {
  */
 const BASELINE = [];
 
+/*
+ * One permission this check does not see, and the reason it is fine.
+ *
+ * `expo-dev-launcher` (pulled in by `expo-dev-client`) adds
+ * `NSLocalNetworkUsageDescription` and an `_expo._tcp` Bonjour service to the
+ * generated `Info.plist`. It is not in `app.json`, because it is applied by
+ * autolinking rather than listed as a plugin, so nothing here can find it. The
+ * purpose string reads "Expo Dev Launcher uses the local network to discover
+ * and connect to development servers running on your computer", which is an
+ * alarming thing to read in an app that sells itself on its privacy label.
+ *
+ * Verified 2026-09-06 while inspecting build 7's plist, and it does NOT ship:
+ * the same plugin adds an Xcode build phase, "Strip Local Network Keys for
+ * Release", that deletes both when `$CONFIGURATION != Debug`. Read in
+ * `node_modules/expo-dev-launcher/plugin/build/withDevLauncher.js`, not assumed.
+ *
+ * Written down because CLAUDE.md requires reading the generated plist after any
+ * config-plugin change, and whoever does that next will see this key and have
+ * the same reaction. The answer is in the plugin, not in this repo.
+ */
+
 /** Every .ts/.tsx/.js the app can actually reach at runtime. */
 function sourceFiles() {
   const out = [];

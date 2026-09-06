@@ -4337,3 +4337,26 @@ repository is correct, and publishing it before build 7 exists is not.
 
 It clears itself. Add build 7 to `LIVE_BUILDS` once it is submitted, which is
 what that file already instructs, and publishing works again.
+
+### What the plist inspection actually found
+
+CLAUDE.md requires reading the generated `Info.plist` after any config-plugin
+change, so build 7's was read rather than assumed. `NSLocationWhenInUseUsage
+Description` is gone, which is the point of the change. Three remain and all
+three have code behind them: camera, photo library, Face ID.
+
+A fourth was there and is worth writing down, because the next person to follow
+that rule will see it and react as I did. `expo-dev-launcher`, pulled in by
+`expo-dev-client`, adds `NSLocalNetworkUsageDescription` with the string
+*"Expo Dev Launcher uses the local network to discover and connect to
+development servers running on your computer"*, plus an `_expo._tcp` Bonjour
+service. In an app that sells itself on its privacy label, that reads like a
+disaster.
+
+**It does not ship.** The same plugin installs an Xcode build phase, "Strip
+Local Network Keys for Release", that deletes both whenever `$CONFIGURATION` is
+not `Debug`. Read in `node_modules/expo-dev-launcher/plugin/build/
+withDevLauncher.js` rather than inferred from the name. The note is in
+`check-permissions.js`, next to the check that cannot see it: the plugin is
+applied by autolinking rather than listed in `app.json`, so nothing in this repo
+can find it by reading config.

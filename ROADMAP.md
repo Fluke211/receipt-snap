@@ -10,6 +10,12 @@ Full reasoning: `MARKET_AND_GTM_STRATEGY.md` §5.3.
 
 ## Pre-launch checklist — agreed 2026-08-26
 
+> **The live version of this is [issue #110](https://github.com/Fluke211/TaxTrail/issues/110)**,
+> opened 2026-09-06 at Tyler's request. What follows is the historical record of
+> the whole pre-launch effort, most of it done; #110 is the short list of what
+> is actually left, in a form he can tick from his phone. When they disagree,
+> #110 is current.
+
 Everything that stands between build 3 and an App Store submission. Ordered by
 what blocks what, not by size.
 
