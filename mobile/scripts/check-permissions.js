@@ -66,24 +66,30 @@ const PERMISSION_PLUGINS = {
  * are a standing to-do: D-066 is the decision, and whichever way it goes this
  * list gets shorter, never longer.
  *
- * Both entries are Tyler's deliberate call (D-069), not an oversight: keeping
- * the modules compiled in is what lets an app lock and GPS mileage ship over
- * the air later, with no build and no credit. The cost is a purpose string in
- * the binary until then, paid knowingly.
+ * Both entries were Tyler's deliberate call (D-069), not an oversight: keeping
+ * the modules compiled in is what let an app lock and GPS mileage ship over the
+ * air later, with no build and no credit. The cost was a purpose string in the
+ * binary until then, paid knowingly.
  *
- *   expo-local-authentication  no app lock YET — kept so one can ship OTA
- *   expo-location              no mileage log YET — same reason
+ * **The list is empty, and D-066 is closed** (2026-09-06, D-085). It emptied
+ * from both ends, which is the shape the comment above predicted:
  *
- * expo-camera was the third entry and is gone: its permission was already
- * justified by expo-image-picker and the document scanner, so it was dead
- * native weight rather than optionality. Removed in build 5.
+ *   expo-camera                removed in build 5. Its permission was already
+ *                              justified by expo-image-picker and the document
+ *                              scanner, so it was dead native weight rather
+ *                              than optionality
+ *   expo-local-authentication  came off 2026-09-02 by SHIPPING the feature: the
+ *                              Face ID app lock is real now (D-079), so the
+ *                              normal check applies to it
+ *   expo-location              came off in build 7 by DROPPING the plugin. GPS
+ *                              mileage is ruled out, so the optionality was
+ *                              never going to be spent and the app was asking
+ *                              for a person's location for nothing
+ *
+ * An empty baseline is the strongest state this check can be in: every
+ * permission in `app.json` now has code behind it, and any new one fails.
  */
-const BASELINE = [
-  // expo-local-authentication came off this list on 2026-09-02: the Face ID app
-  // lock is a real feature now (D-079), so the permission has something behind
-  // it and the normal check applies.
-  'expo-location',
-];
+const BASELINE = [];
 
 /** Every .ts/.tsx/.js the app can actually reach at runtime. */
 function sourceFiles() {
