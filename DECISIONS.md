@@ -4287,3 +4287,53 @@ product. What is behind the tap is the elaboration, not the claim.
 The line is `T.text` and semibold now rather than `T.muted` regular. It was
 styled as a footnote because it used to be a two-sentence paragraph; alone, it
 is the statement the app is built around.
+
+## D-085
+
+**Build 7 drops `expo-location`, and D-066 is closed** (2026-09-06)
+
+Tyler: *"Go ahead on build 7."*
+
+D-066 found that build 4 asked for three permissions with no feature behind
+them. That list has now emptied from both ends, which is what D-069 said would
+have to happen one way or the other:
+
+| | how it closed |
+|---|---|
+| `expo-camera` | removed in build 5. Its permission was already justified by `expo-image-picker` and the document scanner, so it was dead native weight rather than optionality |
+| `expo-local-authentication` | closed by **shipping the feature**. The Face ID app lock is real as of r31 (D-079) |
+| `expo-location` | closed by **dropping the plugin**, here |
+
+Location is the one that could not go the other way. D-069 kept the module
+compiled in deliberately, so a GPS mileage log could ship over the air with no
+build and no build credit. That was a good bet at the time and it did not come
+in: mileage is ruled out, so the optionality was never going to be spent, and
+in the meantime the app was asking a stranger for their location for nothing.
+For an app whose differentiator is its privacy label, that is the most expensive
+kind of dead code there is.
+
+The plugin is out of `app.json` and the package is out of `package.json`.
+`BASELINE` in `check-permissions.js` is now **empty**, which is the strongest
+state that check can be in: every permission the app requests has code behind
+it, and any new one fails CI outright rather than being weighed.
+
+### The guard that had to come with it
+
+Bumping `APP_BUILD` to 7 creates a window, and the window is dangerous.
+`APP_BUILD` is a JavaScript constant, so `eas update` pushes it to every binary
+that is out there. Publish this tree over the air before build 7 reaches phones
+and every build-6 phone starts reporting "build 7" in the Summary footer. That
+is not cosmetic: it is precisely the misdirection that cost four days during the
+launch crash, when three JS revisions were shipped as fixes for a binary nobody
+had correctly identified (D-070). The crash screen refuses to print a build
+number for exactly this reason (D-074); the footer cannot refuse, because
+showing one is Tyler's standing rule.
+
+`scripts/check-publishable.js` compares `APP_BUILD` against the newest row in
+`LIVE_BUILDS` and refuses to publish when the tree is ahead of every shipped
+binary. It runs from the `update` step in `eas.yml` rather than from CI, because
+this is a publish guard and not a merge guard: preparing build 7 in the
+repository is correct, and publishing it before build 7 exists is not.
+
+It clears itself. Add build 7 to `LIVE_BUILDS` once it is submitted, which is
+what that file already instructs, and publishing works again.

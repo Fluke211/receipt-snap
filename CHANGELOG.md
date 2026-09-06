@@ -11,7 +11,33 @@ visible version, and it gets recorded here.
 
 ## iOS app
 
-### js r34 — v1.0.0 (build 6) — 2026-09-05
+### build 7 — v1.0.0 — 2026-09-06
+
+**Native build. The last thing blocking App Store submission on its own.**
+
+`expo-location` is out of `app.json` and out of `package.json` (D-085). The app
+had been asking for a person's location since build 4 for a GPS mileage log that
+does not exist and is now ruled out. D-069 kept the module compiled in on
+purpose, so mileage could ship over the air with no build; that bet did not come
+in, and an unexplained permission is the most expensive kind of dead code in an
+app whose differentiator is its privacy label.
+
+That closes D-066 completely. `BASELINE` in `check-permissions.js` is empty:
+every permission the app requests has code behind it, and a new one fails CI
+outright rather than being weighed.
+
+**A publish guard came with it.** `APP_BUILD` is a JavaScript constant, so an
+OTA pushes it to every live binary. Between bumping it to 7 and build 7 reaching
+phones, publishing this tree would make every build-6 phone report "build 7",
+which is the misdirection that cost four days in D-070.
+`npm run test:publishable` compares `APP_BUILD` against the newest row in
+`LIVE_BUILDS` and refuses. It runs from the `update` step in `eas.yml`, not from
+CI, because preparing a build in the repository is correct and publishing it
+early is not. Adding build 7 to `LIVE_BUILDS` after submission clears it.
+
+Carries js r34.
+
+### js r34 — v1.0.0 (build 6) — 2026-09-05 · published 2026-09-06, group `a7f13686`
 
 **The ON-DEVICE badge is tappable** (D-084). It was a green dot and one word in
 the header of every screen, asserting the whole product thesis and offering no

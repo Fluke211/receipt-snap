@@ -144,11 +144,13 @@ what blocks what, not by size.
       challenged — drafted, and then **checked against the code**, which found
       that two of the four permissions they described have no feature behind
       them (D-066). Face ID and Location are out of the notes
-- [ ] **Resolve D-066 before submitting.** Build 4 requests Face ID and
-      Location for features that do not exist, plus an unused `expo-camera`.
-      Either drop the plugins in build 5 or ship the features — both modules
-      are compiled in, so an app lock and GPS mileage are OTA-shippable with no
-      build. `npm run test:perms` holds the line meanwhile
+- [x] **D-066 is closed** (2026-09-06, D-085). It emptied from both ends, which
+      is exactly the choice D-069 framed. `expo-camera` went in build 5 as dead
+      native weight; `expo-local-authentication` closed by **shipping** the Face
+      ID app lock (r31, D-079); `expo-location` closes by **dropping** the
+      plugin in build 7, because GPS mileage is ruled out so the optionality was
+      never going to be spent. `BASELINE` in `check-permissions.js` is empty
+      now, so every permission has code behind it and a new one fails CI
 - [x] **Final listing copy pass** — every number checked against the code.
       "29 categories" was wrong (28 are selectable; the 29th is
       "Uncategorized"), and the QuickBooks wording promised Desktop users a

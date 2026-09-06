@@ -426,6 +426,11 @@ jobs:
           echo " Version stamp carried by this bundle:"
           grep -E "APP_VERSION|APP_BUILD|JS_REVISION" src/lib/version.ts | sed 's/^/   /'
           echo "================================================================"
+          # APP_BUILD is a JS constant, so this push sets it on every live
+          # binary. Publishing a tree prepared for a build that has not shipped
+          # makes every phone misreport which binary it is running, which is
+          # exactly what cost four days in D-070. Refuses rather than warns.
+          node scripts/check-publishable.js
           npx eas-cli@latest update \
             --branch "$BRANCH" \
             --message "$UPDATE_MESSAGE" \
