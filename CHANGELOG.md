@@ -11,7 +11,7 @@ visible version, and it gets recorded here.
 
 ## iOS app
 
-### build 7 — v1.0.0 — 2026-09-06
+### build 7 — v1.0.0 — 2026-09-06 · built and submitted to TestFlight the same day
 
 **Native build. The last thing blocking App Store submission on its own.**
 
@@ -35,7 +35,9 @@ which is the misdirection that cost four days in D-070.
 CI, because preparing a build in the repository is correct and publishing it
 early is not. Adding build 7 to `LIVE_BUILDS` after submission clears it.
 
-Carries js r34.
+Carries js r34. EAS build `853275f8`, from `88a5061`, five minutes end to end.
+Added to `LIVE_BUILDS` on submission, which is what cleared the publish
+guard: OTA updates work again.
 
 ### js r34 — v1.0.0 (build 6) — 2026-09-05 · published 2026-09-06, group `a7f13686`
 

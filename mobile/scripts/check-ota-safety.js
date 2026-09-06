@@ -120,6 +120,25 @@ const LIVE_BUILDS = [
       'react-native-safe-area-context', 'react-native-worklets',
     ],
   },
+  {
+    build: 7,
+    commit: '88a5061',
+    note: 'TestFlight. **Drops expo-location**, which closes D-066: every '
+      + 'permission the app requests now has code behind it (D-085). Same set '
+      + 'as build 6 otherwise. Embeds js r34. Adding this row is what clears '
+      + 'check-publishable.js and re-enables OTA updates.',
+    modules: [
+      '@expo/vector-icons', 'expo',
+      '@react-native-async-storage/async-storage', 'expo-clipboard',
+      'expo-dev-client', 'expo-document-picker', 'expo-file-system', 'expo-haptics',
+      'expo-image-manipulator', 'expo-image-picker', 'expo-local-authentication',
+      'expo-mail-composer', 'expo-print', 'expo-sharing', 'expo-sqlite',
+      'expo-status-bar', 'expo-store-review', 'expo-text-extractor', 'expo-updates',
+      'react-native-document-scanner-plugin', 'react-native-gesture-handler',
+      'react-native-purchases', 'react-native-purchases-ui', 'react-native-reanimated',
+      'react-native-safe-area-context', 'react-native-worklets',
+    ],
+  },
 ];
 
 /* Packages that ship no native code, so every binary can run them whatever it
