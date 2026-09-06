@@ -143,8 +143,11 @@ what blocks what, not by size.
       working as D-072 predicted. First binary whose embedded bundle runs
       unaided, so the first that is submittable (D-074). Its first attempt died
       on a CocoaPods CDN 400, not the diff (D-073)
-- [ ] Screenshots — **screenshot 2 is the privacy-label comparison** against
-      Keeper / QuickBooks / Wave; that contrast is the entire pitch
+- [ ] Screenshots. Slot 2 is the privacy claim, and it **no longer names
+      competitors** (D-086): 2.3.3 wants the app in use rather than a poster,
+      and 2.3.7 does not want trademarks in metadata. The contrast survives as
+      claims about this app. `tools/screenshots/` composes all six at 1290x2796
+      from raw phone captures, so no Mac is needed
 - [ ] App Privacy questionnaire answers (drafted in `docs/APP_STORE_LISTING.md`)
 - [x] App Review notes explaining on-device OCR, so the privacy claim is not
       challenged — drafted, and then **checked against the code**, which found
@@ -305,9 +308,9 @@ that touches `Info.plist` or entitlements should ride along in the same one.
 - [x] Upload to App Store Connect / TestFlight — 2026-08-21
 - [ ] Install from TestFlight and use it on a real receipt run
 - [ ] App Store review submission (listing metadata, screenshots, privacy answers)
-- [ ] Listing: subtitle "Private, on-device tax scans"; **screenshot 2 is the
-      privacy-label comparison** against Keeper / QuickBooks / Wave — that
-      contrast is the whole pitch
+- [ ] Listing: subtitle "Private, on-device tax scans"; slot 2 carries the
+      privacy claim, as claims about this app rather than a named comparison
+      (D-086)
 - [ ] App Review notes explaining on-device OCR, so the "no data" claim isn't
       challenged
 - [ ] `SKStoreReviewController` prompt after the 3rd successful scan

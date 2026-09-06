@@ -4360,3 +4360,53 @@ withDevLauncher.js` rather than inferred from the name. The note is in
 `check-permissions.js`, next to the check that cannot see it: the plugin is
 applied by autolinking rather than listed in `app.json`, so nothing in this repo
 can find it by reading config.
+
+## D-086
+
+**Screenshot 2 keeps the contrast and drops the competitors** (2026-09-06)
+
+`docs/APP_STORE_LISTING.md`, ROADMAP and STATUS have all said the same thing for
+weeks: *"screenshot 2 is the privacy-label comparison against Keeper /
+QuickBooks / Wave, and that contrast is the entire pitch."* It was never
+challenged because it sounded obviously right, and it is half right.
+
+Reading Apple's guidelines rather than remembering them, while building the
+tooling to compose the screenshots:
+
+- **2.3.3** "Screenshots should show the app in use, and not merely the title
+  art, login page, or splash screen. They may also include text and image
+  overlays." A slot that is only a comparison table is not the app in use. Text
+  over the app is explicitly fine; a poster instead of the app is not.
+- **2.3.7** "don't try to pack any of your metadata with trademarked terms,
+  popular app names ..." That clause is aimed at keyword stuffing, so three
+  competitors' marks in a screenshot is not an automatic rejection. It is a
+  reviewer's discretion, on a submission that has already cost four days, and it
+  invites a complaint from the mark holders that has nothing to do with Apple.
+
+### The reason that is not about rules
+
+A claim about someone else's privacy label is true only until they change it,
+and they can change it without telling anyone. A screenshot is uploaded once and
+sits on the store for months. So the comparison is not just risky, it is
+**perishable**, and nothing in the process would notice it going stale.
+
+Every line in slot 2 is now a claim about this app: no account, no cloud, no ads
+or trackers, read and categorized on the phone. Verifiable, backed by Apple's
+own privacy label for the app, and still true next year.
+
+### The contrast is not lost
+
+It was never the names that carried it. "Nothing leaves this device" against a
+category where everything does is the same argument, and a reader who has used
+one of the others supplies the comparison themselves. The claims sit on a card
+over the middle of the frame, with the app visible above and below, which is
+what keeps the slot compliant with 2.3.3 rather than merely arguable.
+
+### What made this findable
+
+Building `tools/screenshots/`, which exists because Tyler's iPhone 14 captures
+at 1170x2532 and Apple will not accept that size. Writing the tool meant writing
+down what each slot says, and writing slot 2 down meant reading the rule. **A
+plan that nobody has had to implement has never been checked**, and this one had
+been repeated across three canon files, which reads as corroboration and is
+actually one claim copied twice.
