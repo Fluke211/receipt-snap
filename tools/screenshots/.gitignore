@@ -1,0 +1,10 @@
+# Raw phone captures and composed output.
+#
+# Not committed for two reasons. The captures are pictures of Tyler's actual
+# receipts, with merchants, dates and amounts on them, and a repo is not where
+# that belongs. And the output is derived: `node build.js` rebuilds it from
+# whatever is in captures/, so a committed PNG is just a stale copy.
+captures/*
+out/*
+!captures/.gitkeep
+!out/.gitkeep

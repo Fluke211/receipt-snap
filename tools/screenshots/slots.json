@@ -1,0 +1,62 @@
+{
+  "_comment": [
+    "The six App Store screenshot slots, in order. Order matters more than polish:",
+    "people swipe two or three and stop.",
+    "",
+    "`capture` names a PNG in ./captures. Any aspect works; it is drawn to fill",
+    "the frame from the top, so a tall iPhone 14 grab (1170x2532) is fine.",
+    "",
+    "`kind` is 'device' for a normal caption-over-app slot, or 'statement' for one",
+    "that carries a large claim with the app dimmed behind it."
+  ],
+  "slots": [
+    {
+      "file": "1-capture",
+      "kind": "device",
+      "capture": "capture.png",
+      "caption": "Photograph a receipt.\nIt is read on your phone.",
+      "sub": "Merchant, date, total and tax category, in about a second"
+    },
+    {
+      "file": "2-privacy",
+      "kind": "statement",
+      "capture": "capture.png",
+      "caption": "Nothing leaves\nthis device.",
+      "claims": [
+        "No account to create",
+        "No cloud, no sync, no server",
+        "No ads and no trackers",
+        "Read and categorized by your iPhone"
+      ],
+      "sub": "Your receipts are a database on this phone. The only way anything leaves is an export you perform."
+    },
+    {
+      "file": "3-categories",
+      "kind": "device",
+      "capture": "categories.png",
+      "caption": "28 categories,\nmapped to real IRS lines.",
+      "sub": "Schedule C, Schedule A, Form 8829, 4562 and cost of goods sold"
+    },
+    {
+      "file": "4-summary",
+      "kind": "device",
+      "capture": "summary.png",
+      "caption": "Your year,\nby Schedule C line.",
+      "sub": "Business and personal kept apart, with sales tax tracked separately"
+    },
+    {
+      "file": "5-export",
+      "kind": "device",
+      "capture": "export.png",
+      "caption": "Hand your CPA\na file they can open.",
+      "sub": "CSV, Excel, TXF for tax software, QuickBooks Online, or a full archive"
+    },
+    {
+      "file": "6-split",
+      "kind": "device",
+      "capture": "split.png",
+      "caption": "One receipt,\ntwo categories.",
+      "sub": "Sales tax divided the way the amounts were, down to the cent"
+    }
+  ]
+}

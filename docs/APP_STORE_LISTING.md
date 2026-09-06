@@ -194,14 +194,36 @@ Six slots. Apple requires 6.9" (iPhone 16 Pro Max class); 6.5" is accepted for
 older-device coverage. The order matters more than the polish:
 
 1. **Capture → parsed result.** The core loop in one image.
-2. **Privacy label comparison** — TaxTrail beside Keeper, QuickBooks, and
-   Wave. This is the pitch; put it where people actually still swipe.
+2. **The privacy claim, over the app.** This is the pitch; put it where people
+   actually still swipe. **It no longer names competitors** (D-086) — see below.
 3. **Category list**, showing real IRS line numbers. Proves depth.
 4. **Summary by Schedule C line**, with a year total.
 5. **Export sheet** — CSV, Excel, TXF, QuickBooks Online, archive.
 6. **Receipt split**, showing tax-aware division.
 
 Caption every one. Screenshots are read as a slideshow, not studied.
+
+`tools/screenshots/` composes all six at 1290x2796 from raw phone captures, so
+this needs neither a Mac nor the simulator. Its README has the workflow.
+
+### Slot 2 stopped being a competitor comparison (D-086)
+
+It read "TaxTrail beside Keeper, QuickBooks, and Wave" for weeks. Two guidelines
+say not to, both read rather than remembered:
+
+- **2.3.3** "Screenshots should show the app in use, and not merely the title
+  art, login page, or splash screen. They may also include text and image
+  overlays." A slot that is only a comparison table is not the app in use.
+- **2.3.7** "don't try to pack any of your metadata with trademarked terms,
+  popular app names ..." Three competitors' marks in a screenshot is a
+  reviewer's discretion at best, and it invites a complaint from the mark
+  holders that has nothing to do with Apple.
+
+And one reason that is not about rules: a claim about someone else's privacy
+label is true only until they change it, which they can do without telling
+anyone. The contrast survives. Every line in slot 2 is now a claim about **this**
+app, which is verifiable, which Apple's own label already backs, and which stays
+true.
 
 ## Copy accuracy — checked against the code 2026-08-29
 
